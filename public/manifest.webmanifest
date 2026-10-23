@@ -1,0 +1,13 @@
+{
+  "name": "GymLog",
+  "short_name": "GymLog",
+  "description": "Il tuo diario di palestra",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0b0e0d",
+  "theme_color": "#0b0e0d",
+  "lang": "it",
+  "icons": [
+    { "src": "/favicon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
