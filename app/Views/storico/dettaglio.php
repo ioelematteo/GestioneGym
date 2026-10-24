@@ -36,7 +36,6 @@
             <header class="esercizio__testa">
                 <div>
                     <h2 class="titolo-card"><?= esc($es['nome']) ?></h2>
-                    <?php if ($es['gruppo']): ?><p class="esercizio__target"><?= esc($es['gruppo']) ?></p><?php endif ?>
                 </div>
                 <?php if ($es['record']): ?>
                     <span class="chip chip--accento" title="La serie migliore di oggi batte tutte quelle precedenti">Record personale</span>

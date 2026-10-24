@@ -83,7 +83,6 @@ class Workouts extends BaseController
             'workout'  => $workout,
             'righe'    => $this->righeDaMostrare($esercizi),
             'catalogo' => model(EsercizioModel::class)->elenco(),
-            'gruppi'   => $gym->gruppiMuscolari,
             'colori'   => $gym->coloriWorkout,
             'recuperi' => $gym->recuperi,
         ]);
@@ -105,7 +104,7 @@ class Workouts extends BaseController
             return $daDatabase;
         }
 
-        return [['nome' => '', 'gruppo_muscolare' => '', 'serie' => 3, 'rep_target' => '8-10', 'recupero_secondi' => 90, 'note' => '']];
+        return [['nome' => '', 'peso' => '', 'serie' => 3, 'rep_target' => '8-10', 'recupero_secondi' => 90, 'note' => '']];
     }
 
     /**
@@ -119,9 +118,9 @@ class Workouts extends BaseController
         foreach ($colonne['nome'] ?? [] as $i => $nome) {
             $righe[] = [
                 'nome'             => trim((string) $nome),
-                'gruppo_muscolare' => $colonne['gruppo'][$i] ?? '',
                 'serie'            => $colonne['serie'][$i] ?? 3,
                 'rep_target'       => trim((string) ($colonne['rep_target'][$i] ?? '')),
+                'peso'             => str_replace(',', '.', trim((string) ($colonne['peso'][$i] ?? ''))),
                 'recupero_secondi' => $colonne['recupero'][$i] ?? 90,
                 'note'             => trim((string) ($colonne['note'][$i] ?? '')),
             ];
@@ -157,6 +156,10 @@ class Workouts extends BaseController
         }
 
         foreach ($righe as $riga) {
+            if ($riga['peso'] !== '' && ! is_numeric($riga['peso'])) {
+                $errori['esercizi'] = "Il peso di «{$riga['nome']}» deve essere un numero (es. 82.5).";
+            }
+
             if (mb_strlen($riga['nome']) > 100 || mb_strlen($riga['note']) > 255 || mb_strlen($riga['rep_target']) > 20) {
                 $errori['esercizi'] = 'Uno degli esercizi ha un testo troppo lungo.';
             }
@@ -182,7 +185,6 @@ class Workouts extends BaseController
     private function eserciziDalForm(): array
     {
         $recuperi = config('Gym')->recuperi;
-        $gruppi   = config('Gym')->gruppiMuscolari;
         $righe    = [];
 
         foreach ($this->zippa((array) $this->request->getPost('esercizi')) as $riga) {
@@ -190,12 +192,11 @@ class Workouts extends BaseController
                 continue; // riga lasciata vuota
             }
 
-            $gruppo = in_array($riga['gruppo_muscolare'], $gruppi, true) ? $riga['gruppo_muscolare'] : null;
-
             $righe[] = [
-                'esercizio_id'     => model(EsercizioModel::class)->trovaOCrea($riga['nome'], $gruppo),
+                'esercizio_id'     => model(EsercizioModel::class)->trovaOCrea($riga['nome'], null),
                 'serie'            => min(max((int) $riga['serie'], 1), 10),
                 'rep_target'       => $riga['rep_target'] ?: null,
+                'peso'             => is_numeric($riga['peso']) ? min(max((float) $riga['peso'], 0), 9999) : null,
                 'recupero_secondi' => in_array((int) $riga['recupero_secondi'], $recuperi, true) ? (int) $riga['recupero_secondi'] : 90,
                 'note'             => $riga['note'] ?: null,
             ];

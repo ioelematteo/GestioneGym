@@ -65,7 +65,7 @@ class Storico extends BaseController
 
         foreach ($serie as $riga) {
             $id = $riga['esercizio_id'];
-            $esercizi[$id] ??= ['nome' => $riga['esercizio_nome'], 'gruppo' => $riga['gruppo_muscolare'], 'serie' => []];
+            $esercizi[$id] ??= ['nome' => $riga['esercizio_nome'], 'serie' => []];
             $esercizi[$id]['serie'][] = $riga;
         }
 

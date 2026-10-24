@@ -4,7 +4,6 @@
    - Aggiungi esercizio  -> copia il <template> e lo mette in fondo
    - ↑ ↓                 -> sposta la riga (l'ordine delle righe = ordine degli esercizi)
    - ✕                   -> rimuove la riga (ne resta sempre almeno una)
-   - Scegli un esercizio dai suggerimenti -> il gruppo muscolare si riempie da solo
    - Scrivi il nome      -> la lettera nei dischi colorati si aggiorna
    ========================================================================== */
 
@@ -24,10 +23,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (bottone.matches('[data-rimuovi]')) rimuoviRiga(lista, riga);
     if (bottone.matches('[data-sposta="su"]')) spostaSu(riga);
     if (bottone.matches('[data-sposta="giu"]')) spostaGiu(riga);
-  });
-
-  form.addEventListener('change', (evento) => {
-    if (evento.target.matches('[data-nome-esercizio]')) riempiGruppoMuscolare(evento.target);
   });
 
   form.querySelector('#nome').addEventListener('input', (evento) => aggiornaAnteprimaLettera(evento.target.value));
@@ -58,19 +53,6 @@ function spostaSu(riga) {
 function spostaGiu(riga) {
   const dopo = riga.nextElementSibling;
   if (dopo) dopo.after(riga);
-}
-
-/**
- * Se il nome scritto è uno degli esercizi suggeriti, imposto il suo gruppo muscolare.
- */
-function riempiGruppoMuscolare(inputNome) {
-  const opzione = [...document.querySelectorAll('#catalogo-esercizi option')]
-    .find((o) => o.value.toLowerCase() === inputNome.value.trim().toLowerCase());
-
-  if (!opzione || !opzione.dataset.gruppo) return;
-
-  const select = inputNome.closest('[data-riga-esercizio]').querySelector('[data-gruppo-esercizio]');
-  select.value = opzione.dataset.gruppo;
 }
 
 /**

@@ -5,7 +5,7 @@
  * Tutti i campi hanno nomi tipo  esercizi[nome][]  (con le [] vuote):
  * PHP li riceve come array in ordine -> la riga 1 è l'indice 0, la riga 2 l'indice 1, ...
  *
- * Variabili: $riga (array), $gruppi, $recuperi
+ * Variabili: $riga (array), $recuperi
  */
 ?>
 <div class="riga-esercizio" data-riga-esercizio>
@@ -18,16 +18,6 @@
                    placeholder="es. Panca piana" autocomplete="off" data-nome-esercizio>
         </div>
 
-        <div class="campo">
-            <label class="campo__label">Gruppo muscolare</label>
-            <select name="esercizi[gruppo][]" class="input" data-gruppo-esercizio>
-                <option value="">—</option>
-                <?php foreach ($gruppi as $gruppo): ?>
-                    <option <?= $riga['gruppo_muscolare'] === $gruppo ? 'selected' : '' ?>><?= esc($gruppo) ?></option>
-                <?php endforeach ?>
-            </select>
-        </div>
-
         <div class="campo campo--corto">
             <label class="campo__label">Serie</label>
             <input name="esercizi[serie][]" class="input numero" type="number" min="1" max="10" value="<?= (int) $riga['serie'] ?>">
@@ -36,6 +26,11 @@
         <div class="campo campo--corto">
             <label class="campo__label">Rep</label>
             <input name="esercizi[rep_target][]" class="input numero" value="<?= esc($riga['rep_target'] ?? '') ?>" placeholder="8-10" maxlength="20">
+        </div>
+
+        <div class="campo campo--corto">
+            <label class="campo__label">Peso (kg)</label>
+            <input name="esercizi[peso][]" class="input numero" inputmode="decimal" value="<?= esc(isset($riga['peso']) && $riga['peso'] !== '' && $riga['peso'] !== null ? kg($riga['peso']) : '') ?>" placeholder="80">
         </div>
 
         <div class="campo campo--corto">

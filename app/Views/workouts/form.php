@@ -70,7 +70,7 @@ $coloreScelto = old('colore', $workout['colore'] ?? 'verde');
 
             <div class="righe-esercizi" data-lista-esercizi>
                 <?php foreach ($righe as $riga): ?>
-                    <?= componente('workouts/_riga_esercizio', ['riga' => $riga, 'gruppi' => $gruppi, 'recuperi' => $recuperi]) ?>
+                    <?= componente('workouts/_riga_esercizio', ['riga' => $riga, 'recuperi' => $recuperi]) ?>
                 <?php endforeach ?>
             </div>
 
@@ -97,18 +97,17 @@ $coloreScelto = old('colore', $workout['colore'] ?? 'verde');
     </form>
 <?php endif ?>
 
-<!-- Suggerimenti per il campo "Esercizio" (+ gruppo muscolare per riempirlo da solo) -->
+<!-- Suggerimenti per il campo "Esercizio" -->
 <datalist id="catalogo-esercizi">
     <?php foreach ($catalogo as $esercizio): ?>
-        <option value="<?= esc($esercizio['nome']) ?>" data-gruppo="<?= esc($esercizio['gruppo_muscolare'] ?? '') ?>"></option>
+        <option value="<?= esc($esercizio['nome']) ?>"></option>
     <?php endforeach ?>
 </datalist>
 
 <!-- Modello di una riga vuota: il JS lo copia quando premi "Aggiungi esercizio" -->
 <template id="modello-esercizio">
     <?= componente('workouts/_riga_esercizio', [
-        'riga'     => ['nome' => '', 'gruppo_muscolare' => '', 'serie' => 3, 'rep_target' => '8-10', 'recupero_secondi' => 90, 'note' => ''],
-        'gruppi'   => $gruppi,
+        'riga'     => ['nome' => '', 'peso' => '', 'serie' => 3, 'rep_target' => '8-10', 'recupero_secondi' => 90, 'note' => ''],
         'recuperi' => $recuperi,
     ]) ?>
 </template>

@@ -6,6 +6,7 @@
  *   $esercizioId = id dell'esercizio
  *   $n           = numero della serie (1, 2, 3...)
  *   $ultima      = la stessa serie dell'ultimo allenamento (o null se non c'era)
+ *   $pesoPrevisto = il peso scritto nella scheda (usato se non c'è un'ultima volta)
  *   $stati       = elenco stati per la tendina
  *   $nomiStati   = [id => nome] per scrivere lo stato dell'ultima volta
  *
@@ -20,7 +21,7 @@ $vecchio = "serie.{$esercizioId}.{$n}"; // per old() con la "dot notation"
 
     <input class="input numero serie__kg" name="<?= $campo ?>[peso]" value="<?= old($vecchio . '.peso') ?>"
            inputmode="decimal" autocomplete="off" aria-label="Kg serie <?= $n ?>"
-           placeholder="<?= $ultima ? kg($ultima['peso']) : 'kg' ?>">
+           placeholder="<?= $ultima ? kg($ultima['peso']) : ($pesoPrevisto !== null ? kg($pesoPrevisto) : 'kg') ?>">
 
     <input class="input numero serie__rep" name="<?= $campo ?>[rep]" value="<?= old($vecchio . '.rep') ?>"
            inputmode="numeric" autocomplete="off" aria-label="Ripetizioni serie <?= $n ?>"

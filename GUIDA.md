@@ -175,7 +175,7 @@ La funzione è `Statistiche::punteggioSerie()`.
 
 <br>
 
-I tuoi workout ordinati per **"quale tocca adesso"**:
+I tuoi workout (n° esercizi, durata stimata, ultima volta) ordinati per **"quale tocca adesso"**:
 prima quelli mai fatti, poi quello che non fai da più tempo.
 Il primo ha l'etichetta **"Tocca a questo"**. Il ▶ ti porta dritto alla pagina Workout.
 
@@ -308,8 +308,9 @@ Dopo il salvataggio vai al riepilogo dell'allenamento. **Quell'allenamento diven
 <br>
 
 - **Nome**, **descrizione** (facoltativa), **colore**.
-- Esercizi: nome, gruppo muscolare, serie, rep obiettivo (es. `8-10`), recupero, note.
-- Scrivendo il nome compaiono i **suggerimenti** dal catalogo. Se scegli un esercizio esistente, il gruppo muscolare si riempie da solo.
+- Esercizi: nome, serie, rep obiettivo (es. `8-10`), **peso** di lavoro (es. `80`), recupero, note.
+- Scrivendo il nome compaiono i **suggerimenti** dal catalogo.
+- Il **peso** della scheda compare nella pagina Workout accanto al nome dell'esercizio, e fa da placeholder la prima volta che fai quel workout.
 - Esercizio **nuovo**? Lo crea in automatico nel catalogo.
 - **↑ ↓** cambiano l'ordine, **✕** toglie la riga.
 
@@ -687,6 +688,7 @@ users (Shield)
 | ordine | 1 |
 | serie | 4 |
 | rep_target | "6-8" |
+| peso | 80.00 (facoltativo) |
 | recupero_secondi | 120 |
 | note | "fermo al petto" |
 

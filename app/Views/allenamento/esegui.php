@@ -60,8 +60,8 @@ $nomiStati = array_column($stati, 'nome', 'id');
                         · recupero <span class="numero"><?= gmdate('i:s', (int) $es['recupero_secondi']) ?></span>
                     </p>
                 </div>
-                <?php if ($es['gruppo_muscolare']): ?>
-                    <span class="chip"><?= esc($es['gruppo_muscolare']) ?></span>
+                <?php if ($es['peso'] !== null): ?>
+                    <span class="chip numero"><?= kg($es['peso']) ?> kg</span>
                 <?php endif ?>
             </header>
 
@@ -79,6 +79,7 @@ $nomiStati = array_column($stati, 'nome', 'id');
                         'esercizioId' => $es['esercizio_id'],
                         'n'           => $n,
                         'ultima'      => $ultimeSerie[$n] ?? null,
+                        'pesoPrevisto' => $es['peso'],
                         'stati'       => $stati,
                         'nomiStati'   => $nomiStati,
                     ]) ?>
@@ -136,6 +137,7 @@ $nomiStati = array_column($stati, 'nome', 'id');
         'esercizioId' => '__ES__',
         'n'           => '__N__',
         'ultima'      => null,
+        'pesoPrevisto' => null,
         'stati'       => $stati,
         'nomiStati'   => $nomiStati,
     ]) ?>

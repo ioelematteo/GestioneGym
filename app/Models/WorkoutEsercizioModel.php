@@ -11,7 +11,7 @@ class WorkoutEsercizioModel extends Model
 {
     protected $table         = 'workout_esercizi';
     protected $returnType    = 'array';
-    protected $allowedFields = ['workout_id', 'esercizio_id', 'ordine', 'serie', 'rep_target', 'recupero_secondi', 'note'];
+    protected $allowedFields = ['workout_id', 'esercizio_id', 'ordine', 'serie', 'rep_target', 'peso', 'recupero_secondi', 'note'];
 
     /**
      * Gli esercizi di un workout, in ordine, con nome e gruppo muscolare.

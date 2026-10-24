@@ -98,6 +98,7 @@ class DemoSeeder extends Seeder
                     'ordine'           => $ordine + 1,
                     'serie'            => $es[1],
                     'rep_target'       => $es[2],
+                    'peso'             => $this->arrotonda($es[4] + $es[5] * self::SETTIMANE),
                     'recupero_secondi' => $es[3],
                     'note'             => $es[6],
                 ]);

@@ -17,9 +17,6 @@
                 <?= esc($w['nome']) ?>
                 <?php if (! empty($consigliato)): ?><span class="chip chip--accento">Tocca a questo</span><?php endif ?>
             </span>
-            <?php if ($w['gruppi'] !== []): ?>
-                <span class="card-workout__gruppi"><?= esc(implode(' · ', $w['gruppi'])) ?></span>
-            <?php endif ?>
             <span class="card-workout__info">
                 <?= $w['n_esercizi'] ?> esercizi · ~<?= $w['durata_stimata'] ?> min · <?= $w['ultima_volta'] ? 'fatto ' . quando($w['ultima_volta']) : 'mai fatto' ?>
             </span>
