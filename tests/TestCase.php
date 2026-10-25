@@ -10,6 +10,12 @@ use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
 
 abstract class TestCase extends BaseTestCase
 {
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->withoutVite(); // i test non hanno bisogno di CSS/JS compilati
+    }
+
     /** Ruoli e stati servono quasi sempre: li creo prima di ogni test che usa il database. */
     protected function seedBasics(): void
     {
