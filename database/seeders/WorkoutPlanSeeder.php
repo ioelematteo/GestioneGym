@@ -13,7 +13,7 @@ use Illuminate\Database\Seeder;
 class WorkoutPlanSeeder extends Seeder
 {
     public const PLANS = [
-        'Allenamento A' => ['color' => 'rosso', 'exercises' => [
+        'Allenamento A' => ['color' => 'blu', 'exercises' => [
             ['Dip', 3, '8-10', 0],
             ['Panca inclinata', 4, '8-10', 16],
             ['Chest press', 3, '10-12', 30],
@@ -21,7 +21,7 @@ class WorkoutPlanSeeder extends Seeder
             ['Shoulder press', 3, '8-10', 25],
             ['French press', 3, '10-12', 20],
         ]],
-        'Allenamento B' => ['color' => 'blu', 'exercises' => [
+        'Allenamento B' => ['color' => 'verde', 'exercises' => [
             ['Squat', 4, '8-10', 10],
             ['Schiena', 3, '10-12', 15],
             ['Lat machine', 3, '10-12', 40],

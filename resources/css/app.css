@@ -1,96 +1,154 @@
 /* ==========================================================================
    GYMLOG — DESIGN
-   Idea: la palestra vera. Cemento chiaro, inchiostro nero, i colori dei dischi
-   olimpici (rosso 25 · blu 20 · giallo 15 · verde 10 · bianco 5) e numeri
-   grandi e stretti come un tabellone. Angoli quasi vivi, niente ombre.
+   Scuro, minimale, verde menta. Un solo font: Mona Sans (GitHub × Degarism),
+   largo per titoli e numeri, normale per il testo. Pensato per il telefono.
+   I font li importa resources/js/app.js (da npm, dentro il progetto).
    ========================================================================== */
-
-/* I font (da npm, dentro il progetto) li importa resources/js/app.js */
 
 @import 'tailwindcss';
 
 @source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
 @source '../../storage/framework/views/*.php';
 
-/* Token: li usi in Tailwind come bg-cemento, text-inchiostro, font-tabellone... */
-@theme {
-    --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
-    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
-    --font-tabellone: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
+/* Token: in Tailwind diventano bg-surface, text-fg-2, border-line, text-accent...
+   "static" = scrivi SEMPRE tutte le variabili nel CSS, anche quelle non usate come classe
+   (servono a <x-badge> e ai grafici, che le leggono con var(--color-...)) */
+@theme static {
+    --font-sans: 'Mona Sans Variable', ui-sans-serif, system-ui, -apple-system, sans-serif;
 
-    --color-cemento: #e7e8e3;      /* sfondo */
-    --color-gesso: #f7f7f4;        /* pannelli */
-    --color-inchiostro: #131514;   /* testo e barre */
-    --color-grafite: #4b504c;      /* testo secondario */
-    --color-polvere: #7e847f;      /* etichette */
-    --color-riga: #cdd0ca;         /* bordi */
+    --color-bg: #0a0c0b;           /* sfondo */
+    --color-surface: #121514;      /* card */
+    --color-surface-2: #191d1b;    /* campi, hover */
+    --color-surface-3: #222724;    /* premuto */
+    --color-line: #212725;         /* bordi */
+    --color-line-strong: #2e3532;
 
-    --color-disco-rosso: #d13b2f;
-    --color-disco-blu: #2c5bc9;
-    --color-disco-giallo: #e2ad1c;
-    --color-disco-verde: #2f8a55;
-    --color-disco-bianco: #ffffff;
-    --color-disco-nero: #222423;
+    --color-fg: #f1f4f2;           /* testo */
+    --color-fg-2: #a2aba6;         /* testo secondario */
+    --color-fg-3: #6c7571;         /* etichette, placeholder */
 
-    --radius-sm: 3px;
-    --radius-md: 5px;
+    --color-accent: #5bea9c;       /* verde menta */
+    --color-accent-ink: #03140a;   /* testo sopra il verde */
+    --color-danger: #ff6b6b;
+    --color-warn: #f6c85f;
+
+    /* colori delle schede */
+    --color-w-verde: #5bea9c;
+    --color-w-blu: #6ea8ff;
+    --color-w-viola: #b794ff;
+    --color-w-arancio: #ffaa5c;
+    --color-w-rosa: #ff8dc7;
+    --color-w-ciano: #5ed6dd;
+    --color-w-rosso: #ff7a6b;
+    --color-w-giallo: #f6d65c;
 }
+
+/* --- Utility nostre (usabili come classi e dentro @apply) ------------------ */
+
+/* Titoli: Mona Sans più largo e stretto di spaziatura */
+@utility title {
+    font-stretch: 112%;
+    font-weight: 680;
+    letter-spacing: -0.025em;
+    line-height: 1.05;
+}
+
+/* Numeri: un po' più larghi e pesanti del testo.
+   Dove cambiano mentre li guardi (cronometro, timer) aggiungi anche "tabular-nums":
+   cifre tutte larghe uguali, così non "saltellano". */
+@utility num {
+    font-stretch: 108%;
+    font-weight: 620;
+    letter-spacing: -0.02em;
+}
+
+@utility card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: 18px;
+}
+
+/* --- Base ---------------------------------------------------------------- */
 
 @layer base {
-    html { -webkit-text-size-adjust: 100%; }
-    body { @apply bg-cemento text-inchiostro font-sans antialiased; }
-    :focus-visible { outline: 2px solid var(--color-disco-rosso); outline-offset: 2px; }
-    ::selection { background: var(--color-disco-giallo); color: var(--color-inchiostro); }
+    html {
+        color-scheme: dark;
+        background: var(--color-bg);
+        -webkit-text-size-adjust: 100%;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+        @apply bg-bg text-fg font-sans antialiased;
+        font-weight: 450;
+        overscroll-behavior-y: none;
+    }
+
+    a, button, summary, label, select { touch-action: manipulation; }
+
+    :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
+    ::selection { background: var(--color-accent); color: var(--color-accent-ink); }
+
+    input[type='date']::-webkit-calendar-picker-indicator { filter: invert(0.8); }
+
     @media (prefers-reduced-motion: reduce) {
-        *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+        *, *::before, *::after { animation-duration: 0.01ms !important; transition-duration: 0.01ms !important; }
     }
 }
 
-/* Utility nostre: si usano come classi (class="titolo") e dentro @apply */
-@utility titolo { @apply font-tabellone font-extrabold uppercase leading-[0.9] tracking-[0.01em]; }  /* titoli da tabellone */
-@utility numero { @apply font-tabellone font-bold leading-none tabular-nums; }                       /* numeri grandi */
-@utility etichetta { @apply font-mono text-[11px] uppercase tracking-[0.08em] text-polvere; }         /* etichette piccole */
+/* Passaggio morbido tra le pagine (browser recenti, gratis) */
+@view-transition { navigation: auto; }
 
-/* Pezzi riusati ovunque (il resto è Tailwind direttamente nelle viste) */
+/* --- Componenti ------------------------------------------------------------ */
+
 @layer components {
-    .pannello { @apply bg-gesso border border-riga rounded-md; }
-
     .btn {
-        @apply inline-flex items-center justify-center gap-2 h-10 px-4 rounded-sm border border-inchiostro
-               text-sm font-medium bg-transparent text-inchiostro transition-colors
-               hover:bg-inchiostro hover:text-gesso disabled:opacity-50 cursor-pointer;
+        @apply inline-flex items-center justify-center gap-2 h-11 px-4 rounded-full border border-line-strong bg-surface-2
+               text-[15px] text-fg whitespace-nowrap cursor-pointer select-none transition
+               hover:bg-surface-3 active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none;
+        font-weight: 560;
     }
-    .btn-pieno { @apply bg-inchiostro text-gesso hover:bg-grafite hover:border-grafite; }
-    .btn-rosso { @apply bg-disco-rosso border-disco-rosso text-white hover:bg-inchiostro hover:border-inchiostro; }
-    .btn-piccolo { @apply h-8 px-3 text-xs; }
-    .btn-muto { @apply border-transparent text-grafite hover:bg-cemento hover:text-inchiostro; }
-    .btn-pericolo { @apply border-disco-rosso text-disco-rosso hover:bg-disco-rosso hover:text-white; }
+    .btn-primary { @apply bg-accent border-accent text-accent-ink hover:bg-accent hover:brightness-110; }
+    .btn-ghost { @apply bg-transparent border-transparent text-fg-2 hover:bg-surface-2 hover:text-fg; }
+    .btn-danger { @apply bg-transparent border-danger/30 text-danger hover:bg-danger/10; }
+    .btn-sm { @apply h-9 px-3 text-[13px]; }
+    .btn-lg { @apply h-14 px-6 text-base; }
+    .btn-icon { @apply w-11 px-0; }
+    .btn-icon.btn-sm { @apply w-9; }
 
-    .campo { @apply flex flex-col gap-1.5 min-w-0; }
-    .campo > label { @apply text-[13px] font-medium text-grafite; }
+    .field { @apply flex flex-col gap-1.5 min-w-0; }
+    .field > label, .label { @apply text-[13px] text-fg-2; font-weight: 520; }
+    .error { @apply text-[13px] text-danger; }
+
     .input {
-        @apply w-full h-10 px-3 rounded-sm border border-riga bg-white text-inchiostro text-[15px]
-               placeholder:text-polvere/70 focus:border-inchiostro focus:outline-none focus:ring-2 focus:ring-inchiostro/10;
+        @apply w-full h-12 px-4 rounded-xl border border-line bg-surface-2 text-[16px] text-fg outline-none transition
+               placeholder:text-fg-3 hover:border-line-strong focus:border-accent/60 focus:ring-4 focus:ring-accent/10;
     }
-    textarea.input { @apply h-auto py-2 min-h-20; }
-    select.input { @apply pr-8 appearance-none bg-[url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='12'%20height='12'%20fill='none'%20stroke='%234b504c'%20stroke-width='1.6'%3E%3Cpath%20d='m3%204.5%203%203%203-3'/%3E%3C/svg%3E")] bg-no-repeat bg-[right_10px_center]; }
-    .errore { @apply text-[13px] text-disco-rosso; }
+    textarea.input { @apply h-auto py-3 min-h-24 leading-relaxed; }
+    select.input {
+        @apply appearance-none pr-10 bg-no-repeat;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' fill='none' stroke='%23a2aba6' stroke-width='1.8' stroke-linecap='round'%3E%3Cpath d='m3.5 5.5 3.5 3.5 3.5-3.5'/%3E%3C/svg%3E");
+        background-position: right 14px center;
+    }
 
-    /* Tabelle leggere */
-    .tabella { @apply w-full text-sm; }
-    .tabella th { @apply etichetta text-left font-normal pb-2; }
-    .tabella td { @apply py-2.5 border-t border-riga align-middle; }
+    /* serie segnata come fatta (la classe la mette session-logger.js) */
+    .set.is-done .input { @apply border-accent/35 text-accent; }
+
+    .chip { @apply inline-flex items-center gap-1 h-7 px-2.5 rounded-full bg-surface-2 border border-line text-[12px] text-fg-2 whitespace-nowrap; }
+
+    /* lista a righe dentro una card */
+    .rows > * + * { @apply border-t border-line; }
+
+    .table { @apply w-full text-[14px] tabular-nums; }
+    .table th { @apply text-left text-[12px] text-fg-3 pb-2; font-weight: 500; }
+    .table td { @apply py-3 border-t border-line align-middle; }
+
+    /* Risposta del coach (markdown -> HTML) */
+    .prose-coach { @apply text-[15px] leading-relaxed text-fg-2; }
+    .prose-coach h3 { @apply title text-lg text-fg mt-6 mb-2 first:mt-0; }
+    .prose-coach p { @apply mb-3; }
+    .prose-coach ul, .prose-coach ol { @apply mb-3 pl-5 flex flex-col gap-1.5; }
+    .prose-coach ul { @apply list-disc marker:text-accent; }
+    .prose-coach ol { @apply list-decimal marker:text-fg-3; }
+    .prose-coach strong { @apply text-fg; font-weight: 620; }
 }
-
-/* Su telefono i campi a 16px: iPhone non fa lo zoom quando li tocchi */
-@media (max-width: 1023px) {
-    .input { font-size: 16px; }
-}
-
-/* Risposta del coach (markdown -> HTML) */
-.coach-risposta h3 { @apply titolo text-2xl mt-5 mb-2 first:mt-0; }
-.coach-risposta p { @apply mb-3; }
-.coach-risposta ul, .coach-risposta ol { @apply mb-3 pl-5 flex flex-col gap-1; }
-.coach-risposta ul { @apply list-disc marker:text-disco-rosso; }
-.coach-risposta ol { @apply list-decimal; }
-.coach-risposta strong { @apply font-semibold; }

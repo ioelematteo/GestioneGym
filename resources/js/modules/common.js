@@ -22,6 +22,17 @@ export function initCommon() {
         });
     }
 
+    // foto: appena scegli i file il form parte da solo (niente secondo bottone)
+    document.querySelectorAll('[data-photo-input]').forEach((input) => {
+        input.addEventListener('change', () => {
+            if (input.files.length === 0) return;
+            const label = input.closest('label');
+            label.classList.add('opacity-60', 'pointer-events-none');
+            label.querySelector('[data-photo-label]').textContent = 'Carico…';
+            input.form.submit();
+        });
+    });
+
     // dopo il salvataggio di un allenamento cancello la sua bozza
     const clear = document.querySelector('[data-clear-draft]');
     if (clear) storage.remove(draftKey(clear.dataset.clearDraft));

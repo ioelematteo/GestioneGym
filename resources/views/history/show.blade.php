@@ -1,51 +1,48 @@
 <x-layout :title="$session->workout->name">
-    <a href="{{ route('history.index') }}" class="inline-flex items-center gap-1.5 text-sm text-grafite hover:text-inchiostro mb-4"><x-icon name="arrow-left" size="14" /> Storico</a>
+    <a href="{{ route('history.index') }}" class="btn btn-ghost btn-sm -ml-3 mb-3"><x-icon name="arrow-left" size="16" /> Storico</a>
 
-    <div class="flex flex-wrap items-center gap-4 mb-6">
-        <x-plate :color="$session->workout->color" :letter="$session->workout->initial()" size="lg" />
-        <div class="flex-1 min-w-0">
-            <h1 class="titolo text-4xl sm:text-6xl break-words">{{ $session->workout->name }}</h1>
-            <p class="text-grafite text-sm mt-1">{{ $session->performed_at->translatedFormat('l j F Y') }} · {{ $session->performed_at->diffForHumans() }}</p>
+    <div class="flex items-center gap-3 mb-5">
+        <x-badge :color="$session->workout->color" :letter="$session->workout->initial()" size="lg" />
+        <div class="min-w-0 flex-1">
+            <h1 class="title text-[26px] lg:text-[36px] truncate">{{ $session->workout->name }}</h1>
+            <p class="text-[14px] text-fg-3 first-letter:uppercase">{{ $session->performed_at->translatedFormat('l j F Y') }}</p>
         </div>
         @unless ($session->workout->trashed())
-            <a href="{{ route('train.show', $session->workout) }}" class="btn"><x-icon name="repeat" size="16" /> Rifallo</a>
+            <a href="{{ route('train.show', $session->workout) }}" class="btn btn-sm shrink-0"><x-icon name="repeat" size="15" /> Rifai</a>
         @endunless
     </div>
 
-    <dl class="grid grid-cols-2 sm:grid-cols-4 pannello mb-3 divide-x divide-riga">
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
         @foreach (['Durata' => durata($session->duration_minutes), 'Volume' => volume_breve($session->volume()).' kg', 'Serie' => $session->sets->count(), 'Esercizi' => $exercises->count()] as $label => $value)
-            <div class="p-4"><dt class="etichetta">{{ $label }}</dt><dd class="numero text-3xl mt-1">{{ $value }}</dd></div>
+            <div class="card p-4"><p class="text-[13px] text-fg-3">{{ $label }}</p><p class="num text-[22px] mt-1">{{ $value }}</p></div>
         @endforeach
-    </dl>
+    </div>
 
     @if ($session->notes)
-        <p class="mb-3 flex gap-2 border-l-4 border-disco-giallo bg-gesso px-4 py-3 text-sm"><x-icon name="note" size="16" class="mt-0.5" /> {{ $session->notes }}</p>
+        <p class="card mb-3 flex gap-3 px-4 py-3 text-[14px] text-fg-2"><x-icon name="note" size="16" class="text-warn mt-0.5 shrink-0" /> {{ $session->notes }}</p>
     @endif
 
-    <div class="grid md:grid-cols-2 gap-3">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         @foreach ($exercises as $exerciseId => $sets)
             <x-panel :title="$sets->first()->exercise->name">
                 @if (in_array($exerciseId, $records))
-                    <x-slot:aside><span class="etichetta !text-white bg-disco-rosso px-2 py-1 rounded-sm">Record</span></x-slot:aside>
+                    <x-slot:aside><span class="chip !text-accent !border-accent/25 !bg-accent/10">Record</span></x-slot:aside>
                 @endif
-                <table class="tabella">
-                    <thead><tr><th class="w-8">#</th><th>Serie</th><th class="w-2/5">Stato</th></tr></thead>
-                    <tbody>
-                        @foreach ($sets as $set)
-                            <tr>
-                                <td class="font-mono text-polvere">{{ $set->set_number }}</td>
-                                <td class="font-mono">{{ serie($set->weight, $set->reps) }}</td>
-                                <td class="text-grafite">{{ $set->state?->name ?? '—' }}</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                </table>
+                <div class="rows">
+                    @foreach ($sets as $set)
+                        <div class="flex items-center gap-3 py-2.5">
+                            <span class="num text-[13px] text-fg-3 w-5">{{ $set->set_number }}</span>
+                            <span class="num text-[16px] flex-1">{{ serie($set->weight, $set->reps) }}</span>
+                            @if ($set->state)<span class="chip">{{ $set->state->name }}</span>@endif
+                        </div>
+                    @endforeach
+                </div>
             </x-panel>
         @endforeach
     </div>
 
-    <div class="mt-8 flex flex-wrap items-center justify-between gap-3 border border-dashed border-disco-rosso/40 rounded-md p-4">
-        <p class="text-sm text-grafite"><b class="text-inchiostro">Salvato per sbaglio?</b> Eliminandolo spariscono anche le sue serie.</p>
+    <div class="card mt-8 flex flex-wrap items-center justify-between gap-3 p-4 !border-danger/25">
+        <p class="text-[14px] text-fg-3"><span class="text-fg">Salvato per sbaglio?</span> Si cancellano anche le serie.</p>
         <x-delete-button :action="route('history.destroy', $session)" confirm="Eliminare questo allenamento?" />
     </div>
 </x-layout>

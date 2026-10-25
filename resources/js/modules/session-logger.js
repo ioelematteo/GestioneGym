@@ -32,7 +32,7 @@ export function initSessionLogger() {
 
     form.addEventListener('submit', () => {
         setDuration(form, draft.started);
-        form.querySelector('button:not([type="button"])').disabled = true; // niente doppio invio
+        document.querySelector('[data-save]').disabled = true; // niente doppio invio
     });
 
     document.querySelector('[data-draft-discard]')?.addEventListener('click', () => {
@@ -87,7 +87,7 @@ function toggleDone(row, rest) {
 
 function markDone(row, done) {
     row.querySelector('[data-done]').setAttribute('aria-pressed', String(done));
-    row.querySelectorAll('input').forEach((input) => input.classList.toggle('!border-inchiostro', done));
+    row.classList.toggle('is-done', done); // il CSS colora i campi di verde
 }
 
 /** overwrite = false -> riempie solo i campi vuoti */

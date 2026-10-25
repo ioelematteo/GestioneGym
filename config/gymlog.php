@@ -6,14 +6,17 @@
  */
 return [
 
-    // Colori delle schede = colori dei dischi olimpici (chiave => etichetta)
+    // Colori delle schede (chiave => etichetta). Le chiavi corrispondono ai token
+    // --color-w-* in resources/css/app.css
     'colors' => [
-        'rosso' => 'Rosso · 25 kg',
-        'blu' => 'Blu · 20 kg',
-        'giallo' => 'Giallo · 15 kg',
-        'verde' => 'Verde · 10 kg',
-        'bianco' => 'Bianco · 5 kg',
-        'nero' => 'Nero',
+        'verde' => 'Verde',
+        'blu' => 'Blu',
+        'viola' => 'Viola',
+        'arancio' => 'Arancio',
+        'rosa' => 'Rosa',
+        'ciano' => 'Ciano',
+        'rosso' => 'Rosso',
+        'giallo' => 'Giallo',
     ],
 
     // Secondi di recupero proposti
@@ -21,9 +24,9 @@ return [
 
     // Filtro periodo della dashboard (settimane => etichetta)
     'periods' => [
-        4 => 'Ultime 4 settimane',
-        12 => 'Ultimi 3 mesi',
-        26 => 'Ultimi 6 mesi',
+        4 => '4 settimane',
+        12 => '3 mesi',
+        26 => '6 mesi',
     ],
 
     // Dove salvare le foto dei progressi (su Laravel Cloud: il disco del bucket, es. "s3")

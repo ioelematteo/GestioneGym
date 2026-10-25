@@ -3,6 +3,8 @@
 Diario di palestra in **Laravel 13**: segni ogni serie con il suo peso, vedi come salgono i pesi,
 tieni traccia di peso corporeo e foto, e chiedi consigli a un coach IA (DeepSeek) che legge i tuoi dati.
 
+Tema scuro, pensato per il **telefono** e installabile come app (*Aggiungi a schermata Home*).
+
 ## Cosa fa
 
 - **Oggi** — allenamenti nel periodo, media a settimana e al mese, peso corporeo, volume, *come vanno i pesi*, prossima scheda, frequenza

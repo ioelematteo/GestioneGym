@@ -1,100 +1,155 @@
 {{--
-    LA CORNICE DI TUTTE LE PAGINE.
-    Uso:  <x-layout title="Pesi"> ...contenuto... </x-layout>
-    Slot opzionale "actions": bottoni a destra del titolo.
+    LA CORNICE DI TUTTE LE PAGINE
+    Telefono: barra in alto + menu in basso.  Desktop: barra laterale.
+
+    <x-layout title="Pesi" heading="Pesi" subtitle="...">  ... </x-layout>
+    - slot "actions": bottoni accanto al titolo
+    - focus = true: "modalità palestra" (niente menu in basso: la pagina ha la sua barra)
 --}}
-@props(['title' => 'GymLog', 'heading' => null, 'subtitle' => null])
+@props(['title' => 'GymLog', 'heading' => null, 'subtitle' => null, 'focus' => false])
 @php
 $nav = [
-    ['route' => 'dashboard', 'match' => 'dashboard', 'label' => 'Oggi', 'icon' => 'home'],
-    ['route' => 'train.index', 'match' => 'train.*', 'label' => 'Allenamento', 'icon' => 'barbell'],
+    ['route' => 'dashboard', 'match' => 'dashboard', 'label' => 'Home', 'icon' => 'home'],
+    ['route' => 'train.index', 'match' => ['train.*', 'workouts.*'], 'label' => 'Allena', 'icon' => 'barbell'],
     ['route' => 'progress.index', 'match' => 'progress.*', 'label' => 'Pesi', 'icon' => 'chart'],
     ['route' => 'body.index', 'match' => 'body.*', 'label' => 'Corpo', 'icon' => 'body'],
     ['route' => 'coach.index', 'match' => 'coach.*', 'label' => 'Coach', 'icon' => 'coach'],
 ];
+$more = [
+    ['route' => 'history.index', 'match' => 'history.*', 'label' => 'Storico', 'icon' => 'history'],
+    ['route' => 'profile.edit', 'match' => 'profile.*', 'label' => 'Profilo', 'icon' => 'user'],
+];
+if (auth()->user()->isAdmin()) {
+    $more[] = ['route' => 'admin.users.index', 'match' => 'admin.*', 'label' => 'Utenti', 'icon' => 'users'];
+}
+$user = auth()->user();
 @endphp
 <!doctype html>
 <html lang="it">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    <meta name="theme-color" content="#131514">
-    <title>{{ $title }} · GymLog</title>
-    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    @include('partials.head', ['title' => $title])
 </head>
-<body class="min-h-screen pb-[calc(64px+env(safe-area-inset-bottom))] lg:pb-0">
+<body class="min-h-dvh">
+<div class="lg:grid lg:grid-cols-[248px_1fr] min-h-dvh">
 
-    {{-- Barra in alto --}}
-    <header class="bg-inchiostro text-gesso">
-        <div class="max-w-6xl mx-auto px-4 lg:px-8 h-14 flex items-center gap-8">
-            <a href="{{ route('dashboard') }}" class="titolo text-2xl tracking-wide">Gym<span class="text-disco-rosso">/</span>Log</a>
+    {{-- ===== Barra laterale (desktop) ===== --}}
+    <aside class="hidden lg:flex flex-col sticky top-0 h-dvh border-r border-line px-4 py-6">
+        <a href="{{ route('dashboard') }}" class="flex items-center gap-2.5 px-3 mb-8">
+            <x-icon name="barbell" size="24" class="text-accent" />
+            <span class="title text-[20px]">GymLog</span>
+        </a>
 
-            <nav class="hidden lg:flex items-stretch self-stretch gap-1" aria-label="Menu principale">
-                @foreach ($nav as $item)
-                    <a href="{{ route($item['route']) }}" @class([
-                        'flex items-center px-3 text-sm border-b-2 transition-colors',
-                        'border-disco-rosso text-white' => request()->routeIs($item['match']),
-                        'border-transparent text-gesso/60 hover:text-white' => ! request()->routeIs($item['match']),
-                    ])>{{ $item['label'] }}</a>
-                @endforeach
-            </nav>
+        <nav class="flex flex-col gap-1" aria-label="Menu principale">
+            @foreach (array_merge($nav, [null], $more) as $item)
+                @if ($item === null)
+                    <div class="h-px bg-line my-3 mx-3"></div>
+                    @continue
+                @endif
+                @php $active = request()->routeIs($item['match']); @endphp
+                <a href="{{ route($item['route']) }}" @class([
+                    'flex items-center gap-3 h-11 px-3 rounded-xl text-[15px] transition-colors',
+                    'bg-accent/10 text-accent' => $active,
+                    'text-fg-2 hover:bg-surface hover:text-fg' => ! $active,
+                ]) @if ($active) aria-current="page" @endif>
+                    <x-icon :name="$item['icon']" size="20" /> {{ $item['label'] }}
+                </a>
+            @endforeach
+        </nav>
 
-            {{-- Menu utente: <details> si apre e chiude da solo, niente JS --}}
-            <details class="ml-auto relative group" data-menu>
-                <summary class="list-none cursor-pointer flex items-center gap-2 text-sm text-gesso/80 hover:text-white [&::-webkit-details-marker]:hidden">
-                    <span class="grid place-items-center w-8 h-8 rounded-sm bg-white/10 font-semibold">{{ mb_substr(auth()->user()->name, 0, 1) }}</span>
-                    <span class="hidden sm:inline">{{ auth()->user()->name }}</span>
-                    <x-icon name="chevron-down" size="14" />
-                </summary>
-                <div class="absolute right-0 top-11 z-30 w-52 pannello text-inchiostro py-1 text-sm">
-                    <a href="{{ route('history.index') }}" class="flex items-center gap-2 px-3 py-2 hover:bg-cemento"><x-icon name="history" size="16" /> Storico</a>
-                    <a href="{{ route('workouts.create') }}" class="flex items-center gap-2 px-3 py-2 hover:bg-cemento"><x-icon name="plus" size="16" /> Nuova scheda</a>
-                    <a href="{{ route('profile.edit') }}" class="flex items-center gap-2 px-3 py-2 hover:bg-cemento"><x-icon name="user" size="16" /> Profilo</a>
-                    @role('admin')
-                        <a href="{{ route('admin.users.index') }}" class="flex items-center gap-2 px-3 py-2 hover:bg-cemento"><x-icon name="users" size="16" /> Utenti</a>
-                    @endrole
-                    <form method="POST" action="{{ route('logout') }}" class="border-t border-riga mt-1 pt-1">
-                        @csrf
-                        <button class="w-full flex items-center gap-2 px-3 py-2 hover:bg-cemento cursor-pointer"><x-icon name="logout" size="16" /> Esci</button>
-                    </form>
-                </div>
-            </details>
+        <div class="mt-auto flex items-center gap-3 px-3 pt-4 border-t border-line">
+            <span class="grid place-items-center size-9 rounded-full bg-surface-2 text-accent num text-sm">{{ mb_substr($user->name, 0, 1) }}</span>
+            <span class="min-w-0 flex-1 leading-tight">
+                <span class="block text-[14px] truncate" style="font-weight: 560">{{ $user->name }}</span>
+                <span class="block text-[12px] text-fg-3">{{ $user->isAdmin() ? 'Admin' : 'Atleta' }}</span>
+            </span>
+            <form method="POST" action="{{ route('logout') }}">
+                @csrf
+                <button class="btn btn-ghost btn-sm btn-icon" aria-label="Esci" title="Esci"><x-icon name="logout" size="18" /></button>
+            </form>
         </div>
-    </header>
+    </aside>
 
-    <main class="max-w-6xl mx-auto px-4 lg:px-8 py-6 lg:py-8">
-        @if ($heading)
-            <div class="flex flex-wrap items-end justify-between gap-4 mb-6">
-                <div class="min-w-0">
-                    <h1 class="titolo text-5xl sm:text-6xl">{{ $heading }}</h1>
-                    @if ($subtitle)<p class="text-grafite mt-2">{{ $subtitle }}</p>@endif
+    <div class="min-w-0">
+        {{-- ===== Barra in alto (telefono) ===== --}}
+        @unless ($focus)
+            <header class="lg:hidden sticky top-0 z-30 bg-bg/85 backdrop-blur-xl border-b border-line/60 pt-[env(safe-area-inset-top)]">
+                <div class="flex items-center h-14 px-4">
+                    <a href="{{ route('dashboard') }}" class="flex items-center gap-2">
+                        <x-icon name="barbell" size="22" class="text-accent" />
+                        <span class="title text-[18px]">GymLog</span>
+                    </a>
+
+                    {{-- <details> si apre e chiude da solo, niente JavaScript --}}
+                    <details class="ml-auto relative" data-menu>
+                        <summary class="list-none [&::-webkit-details-marker]:hidden grid place-items-center size-10 rounded-full bg-surface-2 text-accent num text-sm cursor-pointer">
+                            {{ mb_substr($user->name, 0, 1) }}
+                        </summary>
+                        <div class="absolute right-0 top-12 w-56 card p-1.5 shadow-2xl shadow-black/60">
+                            <p class="px-3 pt-2 pb-2.5 text-[13px] text-fg-3 border-b border-line mb-1">{{ $user->email }}</p>
+                            @foreach ($more as $item)
+                                <a href="{{ route($item['route']) }}" class="flex items-center gap-3 h-11 px-3 rounded-xl text-[15px] text-fg-2 hover:bg-surface-2 hover:text-fg">
+                                    <x-icon :name="$item['icon']" size="18" /> {{ $item['label'] }}
+                                </a>
+                            @endforeach
+                            <form method="POST" action="{{ route('logout') }}">
+                                @csrf
+                                <button class="w-full flex items-center gap-3 h-11 px-3 rounded-xl text-[15px] text-fg-2 hover:bg-surface-2 hover:text-fg cursor-pointer"><x-icon name="logout" size="18" /> Esci</button>
+                            </form>
+                        </div>
+                    </details>
                 </div>
-                @isset($actions)<div class="flex flex-wrap gap-2">{{ $actions }}</div>@endisset
-            </div>
-        @endif
+            </header>
+        @endunless
 
-        @if (session('success'))
-            <div class="mb-5 flex items-center gap-2 border-l-4 border-disco-verde bg-gesso px-4 py-3 text-sm" role="status" data-flash>
-                <x-icon name="check" size="16" class="text-disco-verde" /> {{ session('success') }}
-            </div>
-        @endif
-        @if (session('clear_draft'))
-            <span hidden data-clear-draft="{{ session('clear_draft') }}"></span>
-        @endif
+        <main @class([
+            'max-w-[1180px] mx-auto px-4 lg:px-10 pt-5 lg:pt-10',
+            'pb-[calc(88px+env(safe-area-inset-bottom))] lg:pb-12' => ! $focus,
+            'pb-[calc(120px+env(safe-area-inset-bottom))] lg:pb-12' => $focus,
+        ])>
+            @if ($heading)
+                <div class="flex flex-wrap items-end justify-between gap-x-4 gap-y-3 mb-5 lg:mb-8">
+                    <div class="min-w-0">
+                        <h1 class="title text-[30px] lg:text-[40px]">{{ $heading }}</h1>
+                        @if ($subtitle)<p class="text-[15px] text-fg-3 mt-1.5">{{ $subtitle }}</p>@endif
+                    </div>
+                    @isset($actions)<div class="flex flex-wrap gap-2">{{ $actions }}</div>@endisset
+                </div>
+            @endif
 
-        {{ $slot }}
-    </main>
+            @if (session('success'))
+                <div class="card mb-4 flex items-center gap-3 px-4 py-3 text-[14px]" role="status" data-flash>
+                    <span class="grid place-items-center size-6 rounded-full bg-accent text-accent-ink"><x-icon name="check" size="14" /></span>
+                    {{ session('success') }}
+                </div>
+            @endif
+            @if (session('clear_draft'))
+                <span hidden data-clear-draft="{{ session('clear_draft') }}"></span>
+            @endif
 
-    {{-- Menu in basso (telefono) --}}
-    <nav class="lg:hidden fixed inset-x-0 bottom-0 z-20 bg-inchiostro text-gesso grid grid-cols-5 h-[calc(64px+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)]" aria-label="Menu">
-        @foreach ($nav as $item)
-            <a href="{{ route($item['route']) }}" @class([
-                'flex flex-col items-center justify-center gap-1 text-[11px] border-t-2',
-                'border-disco-rosso text-white' => request()->routeIs($item['match']),
-                'border-transparent text-gesso/55' => ! request()->routeIs($item['match']),
-            ])><x-icon :name="$item['icon']" size="21" />{{ $item['label'] }}</a>
-        @endforeach
+            {{ $slot }}
+        </main>
+    </div>
+</div>
+
+{{-- ===== Menu in basso (telefono) ===== --}}
+@unless ($focus)
+    <nav class="lg:hidden fixed inset-x-0 bottom-0 z-30 bg-bg/90 backdrop-blur-xl border-t border-line/70 pb-[env(safe-area-inset-bottom)]" aria-label="Menu">
+        <div class="grid grid-cols-5 h-16">
+            @foreach ($nav as $item)
+                @php $active = request()->routeIs($item['match']); @endphp
+                <a href="{{ route($item['route']) }}" @class([
+                    'flex flex-col items-center justify-center gap-1 text-[11px] transition-colors',
+                    'text-fg' => $active,
+                    'text-fg-3' => ! $active,
+                ]) @if ($active) aria-current="page" @endif style="font-weight: 540">
+                    <span @class(['grid place-items-center h-7 w-12 rounded-full transition-colors', 'bg-accent/15 text-accent' => $active])>
+                        <x-icon :name="$item['icon']" size="21" />
+                    </span>
+                    {{ $item['label'] }}
+                </a>
+            @endforeach
+        </div>
     </nav>
+@endunless
 </body>
 </html>

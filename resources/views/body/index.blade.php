@@ -1,113 +1,106 @@
-<x-layout title="Corpo" heading="Corpo" subtitle="Peso, misure e foto: per vedere i cambiamenti che lo specchio non nota.">
-    <div class="grid lg:grid-cols-3 gap-3 items-start">
+<x-layout title="Corpo" heading="Corpo" subtitle="Peso, misure e foto dei progressi.">
+    <div class="grid grid-cols-1 lg:grid-cols-[360px_1fr] gap-3 items-start">
 
-        {{-- Nuova misurazione --}}
-        <x-panel title="Misurazione di oggi">
+        {{-- Pesata veloce: il campo che usi di più, in cima --}}
+        <x-panel title="Pesata di oggi">
             <form method="POST" action="{{ route('body.store') }}" class="flex flex-col gap-3">
                 @csrf
-                <div class="grid grid-cols-2 gap-3">
-                    <x-field label="Peso (kg)" name="weight_kg">
-                        <input id="weight_kg" name="weight_kg" class="input numero !text-2xl" inputmode="decimal" value="{{ old('weight_kg') }}" placeholder="58.4" required>
-                    </x-field>
-                    <x-field label="Data" name="measured_on">
-                        <input id="measured_on" type="date" name="measured_on" class="input" value="{{ old('measured_on', now()->toDateString()) }}" max="{{ now()->toDateString() }}">
-                    </x-field>
-                    <x-field label="% grasso" name="body_fat">
-                        <input id="body_fat" name="body_fat" class="input font-mono" inputmode="decimal" value="{{ old('body_fat') }}" placeholder="facoltativo">
-                    </x-field>
-                    <x-field label="Vita (cm)" name="waist_cm">
-                        <input id="waist_cm" name="waist_cm" class="input font-mono" inputmode="decimal" value="{{ old('waist_cm') }}" placeholder="facoltativo">
-                    </x-field>
+                <div class="flex gap-2">
+                    <label for="weight_kg" class="sr-only">Peso in kg</label>
+                    <input id="weight_kg" name="weight_kg" class="input num !h-14 !text-[24px] flex-1" inputmode="decimal" value="{{ old('weight_kg') }}" placeholder="{{ $entries->first() ? kg($entries->first()->weight_kg) : '0.0' }}" required>
+                    <button class="btn btn-primary !h-14 !px-6">Salva</button>
                 </div>
-                <x-field label="Note" name="notes">
-                    <input id="notes" name="notes" class="input" value="{{ old('notes') }}" placeholder="es. a digiuno, dopo il weekend">
-                </x-field>
-                <button class="btn btn-pieno">Salva misurazione</button>
-                <p class="text-[12px] text-polvere">Una al giorno: se pesi di nuovo oggi, sostituisce quella di prima.</p>
+                @error('weight_kg')<p class="error">{{ $message }}</p>@enderror
+
+                {{-- il resto è facoltativo: chiuso per non disturbare --}}
+                <details class="group" @if ($errors->hasAny(['body_fat', 'waist_cm', 'measured_on', 'notes'])) open @endif>
+                    <summary class="list-none [&::-webkit-details-marker]:hidden flex items-center gap-1.5 text-[13px] text-fg-3 cursor-pointer py-1">
+                        <x-icon name="chevron-down" size="14" class="transition group-open:rotate-180" /> % grasso, vita, data, note
+                    </summary>
+                    <div class="grid grid-cols-2 gap-3 pt-3">
+                        <x-field label="% grasso" name="body_fat"><input id="body_fat" name="body_fat" class="input num" inputmode="decimal" value="{{ old('body_fat') }}"></x-field>
+                        <x-field label="Vita (cm)" name="waist_cm"><input id="waist_cm" name="waist_cm" class="input num" inputmode="decimal" value="{{ old('waist_cm') }}"></x-field>
+                        <x-field label="Data" name="measured_on" class="col-span-2"><input id="measured_on" type="date" name="measured_on" class="input" value="{{ old('measured_on', now()->toDateString()) }}" max="{{ now()->toDateString() }}"></x-field>
+                        <x-field label="Note" name="notes" class="col-span-2"><input id="notes" name="notes" class="input" value="{{ old('notes') }}" placeholder="es. a digiuno"></x-field>
+                    </div>
+                </details>
+                <p class="text-[12px] text-fg-3">Una al giorno: se ti ripesi, sostituisce quella di oggi.</p>
             </form>
         </x-panel>
 
-        {{-- Grafico peso --}}
-        <x-panel title="Peso corporeo" subtitle="Ultimi 6 mesi" class="lg:col-span-2">
+        <x-panel title="Andamento" subtitle="Ultimi 6 mesi">
             @if ($chart->count() >= 2)
-                <div class="h-64"><canvas data-chart="{{ json_encode(['type' => 'body', 'points' => $chart]) }}" role="img" aria-label="Andamento del peso corporeo"></canvas></div>
+                <div class="h-52 lg:h-64"><canvas data-chart="{{ json_encode(['type' => 'line', 'unit' => 'kg', 'points' => $chart]) }}" role="img" aria-label="Andamento del peso corporeo"></canvas></div>
             @else
-                <x-empty title="Servono almeno due misurazioni" text="Pesati con regolarità (stesso orario, stesse condizioni): il grafico arriva da solo." />
+                <x-empty title="Servono almeno due pesate" text="Pesati alla stessa ora e nelle stesse condizioni." />
             @endif
         </x-panel>
 
         {{-- Foto --}}
-        <x-panel title="Foto dei progressi" subtitle="Restano private: le vedi solo tu." class="lg:col-span-2">
+        <x-panel title="Foto" subtitle="Private: le vedi solo tu." class="lg:col-span-2">
+            <form method="POST" action="{{ route('photos.store') }}" enctype="multipart/form-data" class="flex flex-col gap-3 mb-2" data-photo-form>
+                @csrf
+                <div class="grid grid-cols-2 sm:grid-cols-[1fr_1fr_auto] gap-2">
+                    <select name="pose" class="input" aria-label="Posa">
+                        @foreach (\App\Models\ProgressPhoto::POSES as $pose)
+                            <option value="{{ $pose }}" @selected(old('pose') === $pose)>{{ ucfirst($pose) }}</option>
+                        @endforeach
+                    </select>
+                    <input type="date" name="taken_on" class="input" value="{{ old('taken_on', now()->toDateString()) }}" max="{{ now()->toDateString() }}" aria-label="Data">
+                    {{-- il vero input file è nascosto: il bottone apre fotocamera/galleria e il form parte da solo --}}
+                    <label class="btn btn-primary col-span-2 sm:col-span-1 cursor-pointer">
+                        <x-icon name="camera" size="17" /> <span data-photo-label>Aggiungi foto</span>
+                        <input type="file" name="photos[]" accept="image/*" multiple class="sr-only" data-photo-input>
+                    </label>
+                </div>
+                @if ($errors->hasAny(['photos', 'photos.*', 'pose', 'taken_on']))
+                    <p class="error">{{ $errors->first('photos') ?: $errors->first('photos.*') ?: $errors->first('pose') ?: $errors->first('taken_on') }}</p>
+                @endif
+            </form>
+
             @forelse ($photos as $date => $group)
-                <div class="py-3 border-t border-riga first:border-t-0">
-                    <p class="etichetta mb-2">{{ \Carbon\Carbon::parse($date)->translatedFormat('j F Y') }}</p>
-                    <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                <div class="pt-4">
+                    <p class="text-[13px] text-fg-3 mb-2">{{ \Carbon\Carbon::parse($date)->translatedFormat('j F Y') }}</p>
+                    <div class="grid grid-cols-3 sm:grid-cols-5 gap-2">
                         @foreach ($group as $photo)
-                            <figure class="relative group">
-                                <a href="{{ route('photos.show', $photo) }}" target="_blank">
-                                    <img src="{{ route('photos.show', $photo) }}" alt="Foto {{ $photo->pose }} del {{ $photo->taken_on->format('d/m/Y') }}" loading="lazy" class="aspect-[3/4] w-full object-cover rounded-sm bg-cemento">
+                            <figure class="relative">
+                                <a href="{{ route('photos.show', $photo) }}" target="_blank" class="block">
+                                    <img src="{{ route('photos.show', $photo) }}" alt="Foto {{ $photo->pose }} del {{ $photo->taken_on->format('d/m/Y') }}" loading="lazy" decoding="async" class="aspect-[3/4] w-full object-cover rounded-xl bg-surface-2">
                                 </a>
-                                <figcaption class="flex items-center justify-between mt-1 text-[12px] text-grafite">
-                                    <span class="capitalize">{{ $photo->pose }}</span>
-                                    <x-delete-button :action="route('photos.destroy', $photo)" confirm="Eliminare questa foto?" icon />
+                                <figcaption class="absolute inset-x-1.5 bottom-1.5 flex items-center justify-between">
+                                    <span class="chip !h-6 !bg-bg/70 !border-transparent backdrop-blur capitalize">{{ $photo->pose }}</span>
+                                    <x-delete-button :action="route('photos.destroy', $photo)" confirm="Eliminare questa foto?" icon class="!size-8 !bg-bg/70 backdrop-blur" />
                                 </figcaption>
                             </figure>
                         @endforeach
                     </div>
                 </div>
             @empty
-                <x-empty title="Nessuna foto" text="Una foto ogni 2-4 settimane, stessa luce e stessa posa: è il modo più onesto di vedere i progressi." />
+                <x-empty title="Nessuna foto" text="Una ogni 2–4 settimane, stessa luce e stessa posa." />
             @endforelse
         </x-panel>
 
-        {{-- Carica foto --}}
-        <x-panel title="Carica foto">
-            <form method="POST" action="{{ route('photos.store') }}" enctype="multipart/form-data" class="flex flex-col gap-3">
-                @csrf
-                <x-field label="Foto (fino a 6)" name="photos">
-                    <input id="photos" type="file" name="photos[]" accept="image/*" multiple required class="text-sm text-grafite file:mr-3 file:h-9 file:px-3 file:rounded-sm file:border file:border-inchiostro file:bg-transparent file:text-inchiostro file:font-medium file:cursor-pointer hover:file:bg-inchiostro hover:file:text-white">
-                </x-field>
-                @if ($errors->has('photos.*'))<p class="errore">{{ $errors->first('photos.*') }}</p>@endif
-                <div class="grid grid-cols-2 gap-3">
-                    <x-field label="Posa" name="pose">
-                        <select id="pose" name="pose" class="input">
-                            @foreach (\App\Models\ProgressPhoto::POSES as $pose)
-                                <option value="{{ $pose }}" @selected(old('pose') === $pose)>{{ ucfirst($pose) }}</option>
-                            @endforeach
-                        </select>
-                    </x-field>
-                    <x-field label="Data" name="taken_on">
-                        <input id="taken_on" type="date" name="taken_on" class="input" value="{{ old('taken_on', now()->toDateString()) }}" max="{{ now()->toDateString() }}">
-                    </x-field>
-                </div>
-                <x-field label="Note" name="notes">
-                    <input id="notes_photo" name="notes" class="input" placeholder="es. mattina, a digiuno">
-                </x-field>
-                <button class="btn btn-pieno"><x-icon name="camera" size="16" /> Carica</button>
-            </form>
-        </x-panel>
-
-        {{-- Storico misure --}}
-        <x-panel title="Misurazioni" class="lg:col-span-3">
+        {{-- Storico misure: le prime 6, le altre dietro "Mostra tutte" (solo CSS: checkbox + has-[]) --}}
+        <x-panel title="Misurazioni" class="lg:col-span-2 group">
             @if ($entries->isEmpty())
-                <x-empty title="Nessuna misurazione" text="Inizia dal modulo qui sopra." />
+                <x-empty title="Nessuna misurazione" text="Inizia dalla pesata di oggi." />
             @else
-                <div class="overflow-x-auto">
-                    <table class="tabella min-w-[520px]">
-                        <thead><tr><th>Data</th><th class="text-right">Peso</th><th class="text-right">% grasso</th><th class="text-right">Vita</th><th class="pl-6">Note</th><th></th></tr></thead>
-                        <tbody>
-                            @foreach ($entries as $entry)
-                                <tr>
-                                    <td>{{ $entry->measured_on->translatedFormat('j M Y') }}</td>
-                                    <td class="font-mono text-right">{{ kg($entry->weight_kg) }} kg</td>
-                                    <td class="font-mono text-right text-grafite">{{ $entry->body_fat ? kg($entry->body_fat).'%' : '—' }}</td>
-                                    <td class="font-mono text-right text-grafite">{{ $entry->waist_cm ? kg($entry->waist_cm).' cm' : '—' }}</td>
-                                    <td class="text-grafite pl-6">{{ $entry->notes }}</td>
-                                    <td class="text-right"><x-delete-button :action="route('body.destroy', $entry)" confirm="Eliminare questa misurazione?" icon /></td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
+                <div class="rows -mx-4 sm:-mx-5 -mb-2">
+                    @foreach ($entries as $i => $entry)
+                        <div @class(['items-center gap-3 px-4 sm:px-5 py-2.5', 'flex' => $i < 6, 'hidden group-has-[#all-entries:checked]:flex' => $i >= 6])>
+                            <span class="text-[14px] text-fg-2 w-24 shrink-0">{{ $entry->measured_on->translatedFormat('j M Y') }}</span>
+                            <span class="num text-[16px]">{{ kg($entry->weight_kg) }}<span class="text-[11px] text-fg-3 font-normal"> kg</span></span>
+                            <span class="flex-1 min-w-0 truncate text-[13px] text-fg-3">
+                                {{ collect([$entry->body_fat ? kg($entry->body_fat).'%' : null, $entry->waist_cm ? kg($entry->waist_cm).' cm' : null, $entry->notes])->filter()->implode(' · ') }}
+                            </span>
+                            <x-delete-button :action="route('body.destroy', $entry)" confirm="Eliminare questa misurazione?" icon />
+                        </div>
+                    @endforeach
+                    @if ($entries->count() > 6)
+                        <label class="flex justify-center py-3 text-[14px] text-fg-2 hover:text-fg cursor-pointer group-has-[#all-entries:checked]:hidden">
+                            <input type="checkbox" id="all-entries" class="sr-only"> Mostra tutte ({{ $entries->count() }})
+                        </label>
+                    @endif
                 </div>
             @endif
         </x-panel>

@@ -1,0 +1,17 @@
+{
+    "name": "GymLog",
+    "short_name": "GymLog",
+    "description": "Il tuo diario di palestra.",
+    "lang": "it",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "orientation": "portrait",
+    "background_color": "#0a0c0b",
+    "theme_color": "#0a0c0b",
+    "icons": [
+        { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+        { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+        { "src": "/icon-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    ]
+}

@@ -1,32 +1,31 @@
 <x-layout :title="$exercise->name">
-    <a href="{{ route('progress.index') }}" class="inline-flex items-center gap-1.5 text-sm text-grafite hover:text-inchiostro mb-4"><x-icon name="arrow-left" size="14" /> Pesi</a>
-    <h1 class="titolo text-5xl sm:text-6xl mb-6">{{ $exercise->name }}</h1>
+    <a href="{{ route('progress.index') }}" class="btn btn-ghost btn-sm -ml-3 mb-3"><x-icon name="arrow-left" size="16" /> Pesi</a>
+    <h1 class="title text-[30px] lg:text-[40px] mb-5">{{ $exercise->name }}</h1>
 
     @php $latest = $rows->first(); @endphp
-    <dl class="grid grid-cols-2 sm:grid-cols-4 pannello mb-3 divide-x divide-riga">
-        <div class="p-4"><dt class="etichetta">Peso medio ultima volta</dt><dd class="numero text-4xl mt-1">{{ kg($latest['avg']) }}<span class="text-sm font-sans font-normal text-grafite"> kg</span></dd></div>
-        <div class="p-4"><dt class="etichetta">Media di sempre</dt><dd class="numero text-4xl mt-1">{{ kg(round($rows->avg('avg'), 1)) }}<span class="text-sm font-sans font-normal text-grafite"> kg</span></dd></div>
-        <div class="p-4"><dt class="etichetta">Peso massimo</dt><dd class="numero text-4xl mt-1">{{ kg($rows->max('max')) }}<span class="text-sm font-sans font-normal text-grafite"> kg</span></dd></div>
-        <div class="p-4"><dt class="etichetta">Allenamenti</dt><dd class="numero text-4xl mt-1">{{ $rows->count() }}</dd></div>
-    </dl>
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
+        <x-stat label="Ultima volta" :value="kg($latest['avg'])" unit="kg"><span>peso medio</span></x-stat>
+        <x-stat label="Massimo" :value="kg($rows->max('max'))" unit="kg"><span>singola serie</span></x-stat>
+        <x-stat label="Media" :value="kg(round($rows->avg('avg'), 1))" unit="kg"><span>di sempre</span></x-stat>
+        <x-stat label="Allenamenti" :value="$rows->count()"><span>con questo esercizio</span></x-stat>
+    </div>
 
-    <div class="grid lg:grid-cols-[1.4fr_1fr] gap-3 items-start">
-        <x-panel title="Andamento" subtitle="Peso medio (linea) e peso massimo (punti) di ogni allenamento">
-            <div class="h-72">
+    <div class="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr] gap-3 items-start">
+        <x-panel title="Andamento" subtitle="Linea: peso medio · punti: massimo">
+            <div class="h-56 lg:h-72">
                 <canvas data-chart="{{ json_encode(['type' => 'lift', 'points' => $chart]) }}" role="img" aria-label="Andamento del peso di {{ $exercise->name }}"></canvas>
             </div>
         </x-panel>
 
-        <x-panel title="Allenamenti">
-            <table class="tabella">
-                <thead><tr><th>Data</th><th class="text-right">Medio</th><th class="text-right">Max</th><th class="text-right">Serie</th></tr></thead>
+        <x-panel title="Ogni allenamento">
+            <table class="table">
+                <thead><tr><th>Data</th><th class="text-right">Medio</th><th class="text-right">Max</th></tr></thead>
                 <tbody>
                     @foreach ($rows as $row)
                         <tr>
-                            <td><a href="{{ route('history.show', $row['session_id']) }}" class="hover:text-disco-rosso">{{ $row['date']->translatedFormat('j M Y') }}</a></td>
-                            <td class="font-mono text-right">{{ kg($row['avg']) }}</td>
-                            <td class="font-mono text-right text-grafite">{{ kg($row['max']) }}</td>
-                            <td class="font-mono text-right text-polvere">{{ $row['sets'] }}</td>
+                            <td><a href="{{ route('history.show', $row['session_id']) }}" class="text-fg-2 hover:text-accent">{{ $row['date']->translatedFormat('j M Y') }}</a></td>
+                            <td class="num text-right">{{ kg($row['avg']) }}</td>
+                            <td class="num text-right text-fg-3">{{ kg($row['max']) }}</td>
                         </tr>
                     @endforeach
                 </tbody>

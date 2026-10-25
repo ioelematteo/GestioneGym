@@ -1,5 +1,5 @@
 /* ==========================================================================
-   FORM SCHEDA: aggiungi / togli / sposta esercizi, lettera del disco in anteprima.
+   FORM SCHEDA: aggiungi / togli / sposta esercizi, lettera della scheda in anteprima.
    ========================================================================== */
 export function initPlanEditor() {
     const form = document.querySelector('[data-plan-editor]');
@@ -30,8 +30,8 @@ export function initPlanEditor() {
         const words = event.target.value.trim().split(/\s+/);
         const last = words[words.length - 1] || '';
         const letter = (words.length > 1 && last.length <= 2 ? last : event.target.value.trim().charAt(0)) || 'A';
-        form.querySelectorAll('[data-plate-preview]').forEach((plate) => {
-            plate.lastChild.textContent = letter.toUpperCase();
+        form.querySelectorAll('[data-badge-preview]').forEach((badge) => {
+            badge.textContent = letter.toUpperCase();
         });
     });
 }

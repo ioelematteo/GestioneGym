@@ -296,7 +296,7 @@ In `resources/views/components/`. Li usi come tag HTML:
 | `<x-layout>` | la cornice di ogni pagina (barra in alto, menu in basso su telefono) |
 | `<x-panel title="...">` | un pannello con titolo |
 | `<x-stat label="..." value="...">` | numero grande |
-| `<x-plate color="rosso" letter="A">` | il disco della scheda |
+| `<x-badge color="blu" letter="A">` | la lettera della scheda nel suo colore |
 | `<x-trend :delta="...">` | la pillola ↑ +3 |
 | `<x-spark :values="...">` | mini grafico in SVG |
 | `<x-field label="..." name="...">` | campo di un form con l'errore |
@@ -315,8 +315,8 @@ In `resources/views/components/`. Li usi come tag HTML:
 
 | Modulo | Cosa fa |
 |---|---|
-| `common.js` | conferme, filtro periodo, menu, pulizia bozza |
-| `charts.js` | i grafici (Chart.js) da `<canvas data-chart>` |
+| `common.js` | conferme, filtro periodo, menu, foto che partono da sole, pulizia bozza |
+| `charts.js` | i grafici da `<canvas data-chart>`; Chart.js (`chart-setup.js`) lo scarica solo se nella pagina c'è un grafico |
 | `session-logger.js` | cronometro, ✓, + serie, recupero, bozza |
 | `plan-editor.js` | righe del form scheda |
 | `coach.js` | suggerimenti e "sto pensando…" |
@@ -403,17 +403,33 @@ Nomi in inglese perché Laravel "indovina" le tabelle dai nomi dei Model (Workou
 
 <br>
 
-Il tema scuro con il verde menta era il look da "app fatta dall'IA". La nuova direzione viene dalla palestra vera:
+È un'app da **telefono** (la usi in palestra), quindi tutto parte dallo schermo piccolo; il computer è un extra.
 
-- **Cemento chiaro** come sfondo, **inchiostro nero** per testo e barre.
-- **I colori dei dischi olimpici** (rosso 25 · blu 20 · giallo 15 · verde 10 · bianco 5) come colore delle schede.
-- **Il disco**: il badge della scheda è un disco visto di lato.
-- **Big Shoulders Display** per titoli e numeri, come un tabellone; **IBM Plex Sans/Mono** per il testo e i dati.
-- Angoli quasi vivi (3–5 px), niente ombre, niente gradienti.
-- Il **rosso** solo dove conta: il prossimo allenamento, l'ultimo valore nei grafici, i record, "Salva allenamento".
+**Il look**: scuro, minimale, un solo colore forte. Come la foto di riferimento, senza le cose inutili.
 
-I token stanno in `resources/css/app.css` (`@theme`): li usi come classi Tailwind (`bg-cemento`, `text-disco-rosso`, `font-tabellone`).
-I font arrivano da npm (`@fontsource`), quindi sono dentro il progetto e funzionano anche senza CDN.
+- **Sfondo quasi nero** (`#0a0c0b`) e card un filo più chiare (`surface`), con bordi sottili invece delle ombre.
+- **Verde menta** (`accent`) solo per le cose importanti: il bottone principale, la serie fatta, l'ultimo punto dei grafici, le frecce in su.
+- **Un solo font: Mona Sans** (di GitHub, disegnato con lo studio Degarism). È *variabile*: oltre al peso cambia anche la **larghezza** (`font-stretch` da 75% a 125%). Titoli e numeri sono un po' più larghi (`title`, `num`), il testo normale no. Niente Inter o Roboto, i font "di default".
+- **Colori delle schede**: verde, blu, viola, arancio, rosa, ciano, rosso, giallo (`--color-w-*`). Li vedi nel badge con la lettera ("A", "B").
+
+**Pensato per il telefono**:
+
+- menu in basso a portata di pollice, barra in alto con il menu account;
+- durante l'allenamento sparisce il menu: in basso restano solo timer di recupero e "Salva allenamento";
+- campi kg/rep grandi (56 px), testo a 16 px (così iPhone non fa zoom quando tocchi un campo), `inputmode="decimal"` per avere il tastierino numerico;
+- rispetta la "tacca" e la barra di iPhone (`env(safe-area-inset-*)`);
+- si **installa come app**: dal browser → *Aggiungi a schermata Home*. Lo fanno `public/manifest.webmanifest` e le icone in `public/`.
+
+| Dicitura | Cosa significa |
+|---|---|
+| `@theme static { --color-accent: ... }` | i token di Tailwind 4: diventano classi (`bg-accent`, `text-fg-3`). `static` = scrivi sempre tutte le variabili, anche quelle usate solo con `var(...)` |
+| `@utility num { ... }` | una classe nostra (`class="num"`) che funziona come quelle di Tailwind |
+| `aria-pressed:bg-accent` | stile applicato quando il bottone ha `aria-pressed="true"` (serie fatta) |
+| `group-has-[#id:checked]:flex` | "se dentro il gruppo c'è quella checkbox spuntata, mostrami": "Mostra tutte" senza JavaScript |
+| `tabular-nums` | cifre tutte larghe uguali: il cronometro non "balla" |
+| `@view-transition` | passaggio morbido tra le pagine, gratis, nei browser recenti |
+
+I font arrivano da npm (`@fontsource-variable/mona-sans`), quindi sono dentro il progetto e funzionano anche senza CDN.
 
 </details>
 

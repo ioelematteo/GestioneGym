@@ -2,14 +2,8 @@
    APP.JS — accende i moduli. Ogni modulo fa UNA cosa e parte solo se
    nella pagina c'è il suo elemento (es. data-session, data-chart).
    ========================================================================== */
-// Font self-hosted da npm (niente CDN esterni)
-import '@fontsource/big-shoulders-display/700';
-import '@fontsource/big-shoulders-display/800';
-import '@fontsource/ibm-plex-sans/400';
-import '@fontsource/ibm-plex-sans/500';
-import '@fontsource/ibm-plex-sans/600';
-import '@fontsource/ibm-plex-mono/400';
-import '@fontsource/ibm-plex-mono/500';
+// Font self-hosted da npm (niente CDN esterni). wdth = versione con larghezza variabile (75–125%)
+import '@fontsource-variable/mona-sans/wdth.css';
 
 import { initCommon } from './modules/common';
 import { initCharts } from './modules/charts';

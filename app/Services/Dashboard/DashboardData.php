@@ -41,6 +41,11 @@ class DashboardData
             $bodyEntries = $this->body->latest($user, 8);
         }
 
+        // grafico del peso: sempre gli ultimi 3 mesi, qualunque sia il periodo scelto
+        $bodyChart = $this->body->since($user, CarbonImmutable::today()->subMonths(3))
+            ->map(fn ($entry) => ['label' => $entry->measured_on->translatedFormat('j M'), 'value' => $entry->weight_kg])
+            ->values();
+
         return [
             'sessions' => ['value' => $now, 'delta' => $now - $before],
             'per_week' => ['value' => round($now / $weeks, 1), 'delta' => round(($now - $before) / $weeks, 1), 'per_month' => round($now / ($weeks * 7) * 30.4, 1)],
@@ -50,6 +55,7 @@ class DashboardData
                 'delta' => $bodyEntries->count() > 1 ? round($bodyEntries->last()->weight_kg - $bodyEntries->first()->weight_kg, 1) : null,
                 'series' => $bodyEntries->pluck('weight_kg')->all(),
             ],
+            'body_chart' => $bodyChart,
             'frequency' => [
                 'weeks' => $this->frequency->perWeek($allDates, 8),
                 'months' => $this->frequency->perMonth($allDates, 6),
