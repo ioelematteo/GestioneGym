@@ -1,0 +1,96 @@
+/* ==========================================================================
+   GYMLOG — DESIGN
+   Idea: la palestra vera. Cemento chiaro, inchiostro nero, i colori dei dischi
+   olimpici (rosso 25 · blu 20 · giallo 15 · verde 10 · bianco 5) e numeri
+   grandi e stretti come un tabellone. Angoli quasi vivi, niente ombre.
+   ========================================================================== */
+
+/* I font (da npm, dentro il progetto) li importa resources/js/app.js */
+
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+/* Token: li usi in Tailwind come bg-cemento, text-inchiostro, font-tabellone... */
+@theme {
+    --font-sans: 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, monospace;
+    --font-tabellone: 'Big Shoulders Display', 'Arial Narrow', sans-serif;
+
+    --color-cemento: #e7e8e3;      /* sfondo */
+    --color-gesso: #f7f7f4;        /* pannelli */
+    --color-inchiostro: #131514;   /* testo e barre */
+    --color-grafite: #4b504c;      /* testo secondario */
+    --color-polvere: #7e847f;      /* etichette */
+    --color-riga: #cdd0ca;         /* bordi */
+
+    --color-disco-rosso: #d13b2f;
+    --color-disco-blu: #2c5bc9;
+    --color-disco-giallo: #e2ad1c;
+    --color-disco-verde: #2f8a55;
+    --color-disco-bianco: #ffffff;
+    --color-disco-nero: #222423;
+
+    --radius-sm: 3px;
+    --radius-md: 5px;
+}
+
+@layer base {
+    html { -webkit-text-size-adjust: 100%; }
+    body { @apply bg-cemento text-inchiostro font-sans antialiased; }
+    :focus-visible { outline: 2px solid var(--color-disco-rosso); outline-offset: 2px; }
+    ::selection { background: var(--color-disco-giallo); color: var(--color-inchiostro); }
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    }
+}
+
+/* Utility nostre: si usano come classi (class="titolo") e dentro @apply */
+@utility titolo { @apply font-tabellone font-extrabold uppercase leading-[0.9] tracking-[0.01em]; }  /* titoli da tabellone */
+@utility numero { @apply font-tabellone font-bold leading-none tabular-nums; }                       /* numeri grandi */
+@utility etichetta { @apply font-mono text-[11px] uppercase tracking-[0.08em] text-polvere; }         /* etichette piccole */
+
+/* Pezzi riusati ovunque (il resto è Tailwind direttamente nelle viste) */
+@layer components {
+    .pannello { @apply bg-gesso border border-riga rounded-md; }
+
+    .btn {
+        @apply inline-flex items-center justify-center gap-2 h-10 px-4 rounded-sm border border-inchiostro
+               text-sm font-medium bg-transparent text-inchiostro transition-colors
+               hover:bg-inchiostro hover:text-gesso disabled:opacity-50 cursor-pointer;
+    }
+    .btn-pieno { @apply bg-inchiostro text-gesso hover:bg-grafite hover:border-grafite; }
+    .btn-rosso { @apply bg-disco-rosso border-disco-rosso text-white hover:bg-inchiostro hover:border-inchiostro; }
+    .btn-piccolo { @apply h-8 px-3 text-xs; }
+    .btn-muto { @apply border-transparent text-grafite hover:bg-cemento hover:text-inchiostro; }
+    .btn-pericolo { @apply border-disco-rosso text-disco-rosso hover:bg-disco-rosso hover:text-white; }
+
+    .campo { @apply flex flex-col gap-1.5 min-w-0; }
+    .campo > label { @apply text-[13px] font-medium text-grafite; }
+    .input {
+        @apply w-full h-10 px-3 rounded-sm border border-riga bg-white text-inchiostro text-[15px]
+               placeholder:text-polvere/70 focus:border-inchiostro focus:outline-none focus:ring-2 focus:ring-inchiostro/10;
+    }
+    textarea.input { @apply h-auto py-2 min-h-20; }
+    select.input { @apply pr-8 appearance-none bg-[url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='12'%20height='12'%20fill='none'%20stroke='%234b504c'%20stroke-width='1.6'%3E%3Cpath%20d='m3%204.5%203%203%203-3'/%3E%3C/svg%3E")] bg-no-repeat bg-[right_10px_center]; }
+    .errore { @apply text-[13px] text-disco-rosso; }
+
+    /* Tabelle leggere */
+    .tabella { @apply w-full text-sm; }
+    .tabella th { @apply etichetta text-left font-normal pb-2; }
+    .tabella td { @apply py-2.5 border-t border-riga align-middle; }
+}
+
+/* Su telefono i campi a 16px: iPhone non fa lo zoom quando li tocchi */
+@media (max-width: 1023px) {
+    .input { font-size: 16px; }
+}
+
+/* Risposta del coach (markdown -> HTML) */
+.coach-risposta h3 { @apply titolo text-2xl mt-5 mb-2 first:mt-0; }
+.coach-risposta p { @apply mb-3; }
+.coach-risposta ul, .coach-risposta ol { @apply mb-3 pl-5 flex flex-col gap-1; }
+.coach-risposta ul { @apply list-disc marker:text-disco-rosso; }
+.coach-risposta ol { @apply list-decimal; }
+.coach-risposta strong { @apply font-semibold; }

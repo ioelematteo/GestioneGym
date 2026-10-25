@@ -1,33 +1,30 @@
 # GymLog
 
-Una piccola webapp per segnare gli allenamenti in palestra e vedere come stai andando.
-Fatta con **CodeIgniter 4** + **Shield** (login e ruoli), CSS e JavaScript senza framework.
-
-![Home](docs/home.png)
-
-<img src="docs/workout-telefono.png" alt="Pagina Workout sul telefono" width="300">
+Diario di palestra in **Laravel 13**: segni ogni serie con il suo peso, vedi come salgono i pesi,
+tieni traccia di peso corporeo e foto, e chiedi consigli a un coach IA (DeepSeek) che legge i tuoi dati.
 
 ## Cosa fa
 
-- **Home:** allenamenti nel periodo, media settimanale e mensile, peso corporeo, volume, progressi principali, prossimo workout da fare
-- **Workout:** scegli la scheda e segni kg/rep di ogni serie. Sotto ogni serie vedi cosa hai fatto **l'ultima volta**. Cronometro, timer di recupero, stati della serie (kippate, mezza rep, spottato…), bozza salvata nel telefono
-- **Crea workout:** schede con esercizi, serie, rep obiettivo, recupero e note
-- **Storico:** tutti gli allenamenti, con i record personali
-- **Utenti (solo admin):** crea, modifica, blocca, elimina
+- **Oggi** — allenamenti nel periodo, media a settimana e al mese, peso corporeo, volume, *come vanno i pesi*, prossima scheda, frequenza
+- **Allenamento** — scegli la scheda e segni kg e rep di **ogni serie**. Sotto ogni serie vedi cosa hai fatto l'ultima volta. Cronometro, timer di recupero, stati della serie (kippate, mezza rep, spottato…), bozza salvata nel telefono
+- **Pesi** — per ogni esercizio: peso medio delle serie allenamento dopo allenamento, massimo, grafico
+- **Corpo** — peso, % grasso, vita, foto dei progressi (private)
+- **Coach** — DeepSeek riceve schede, serie, trend e misure, e risponde con un'analisi
+- **Schede**, **Storico** (con record personali), **Profilo**, **Utenti** (solo admin)
 
-## Avvio
+## Avvio in locale
 
 ```bash
 composer install
-cp .env.example .env          # poi metti i dati del tuo database
-php spark key:generate
-php spark migrate --all
-php spark db:seed DatabaseSeeder
-php spark db:seed DemoSeeder  # facoltativo: dati finti per vedere i grafici
-php spark serve
+cp .env.example .env
+php artisan key:generate
+touch database/database.sqlite        # oppure configura MySQL/Postgres nel .env
+php artisan migrate
+php artisan db:seed                   # ruoli, stati, 2 utenti, schede A e B
+php artisan db:seed --class=DemoSeeder   # facoltativo: 10 settimane di dati finti
+npm install && npm run build
+php artisan serve
 ```
-
-Apri http://localhost:8080
 
 | Email | Password | Ruolo |
 |---|---|---|
@@ -36,12 +33,21 @@ Apri http://localhost:8080
 
 Cambia le password dopo il primo accesso (menu in alto a destra → Profilo).
 
+## Laravel Cloud
+
+1. Collega il repository (branch `main`).
+2. Aggiungi un **database** (MySQL o Postgres): le variabili `DB_*` le imposta Laravel Cloud.
+3. Aggiungi un **bucket** (object storage) per le foto e metti `GYMLOG_PHOTOS_DISK` = nome del disco del bucket.
+4. Variabili d'ambiente: `APP_LOCALE=it`, `APP_TIMEZONE=Europe/Rome`, `DEEPSEEK_API_KEY=...`.
+5. Build: `composer install --no-dev` e `npm ci && npm run build`. Deploy: `php artisan migrate --force`.
+6. Solo la prima volta, dalla console di Laravel Cloud: `php artisan db:seed --force`.
+
 ## Test
 
 ```bash
-vendor/bin/phpunit
+php artisan test
 ```
 
 ## Documentazione
 
-Tutto quello che c'è da sapere (architettura, database, scelte, dizionario di CodeIgniter) è in **[GUIDA.md](GUIDA.md)**.
+Architettura, database, scelte e dizionario Laravel: **[GUIDA.md](GUIDA.md)**.

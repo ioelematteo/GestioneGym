@@ -1,76 +1,65 @@
 # 🏋️ GymLog — la guida
 
-> **In una riga:** una piccola webapp in CodeIgniter 4 per segnare gli allenamenti in palestra
-> e vedere come stai andando.
+> **In una riga:** un diario di palestra in Laravel, fatto a **scatole chiuse**. Ogni scatola fa una cosa sola,
+> riceve dall'esterno quello che le serve (dependency injection) e la puoi cambiare senza toccare le altre.
 >
-> **Come leggere questa guida:** ogni titolo con la ▸ è una **scheda chiusa**. Clicca per aprirla.
-> Dentro ci sono altre schede. Apri solo quello che ti serve adesso, il resto può aspettare.
+> **Come leggere:** ogni ▸ è una scheda chiusa. Apri solo quella che ti serve adesso.
 
 ---
 
 <details>
-<summary><b>⚡ Avvio rapido (5 minuti)</b></summary>
+<summary><b>⚡ Avvio rapido</b></summary>
 
 <br>
-
-**Ti serve:** PHP 8.2+, Composer, MySQL/MariaDB (XAMPP, Laragon, MAMP vanno bene).
 
 ```bash
-# 1. scarica le librerie (crea la cartella vendor/)
 composer install
-
-# 2. crea il file di configurazione e modificalo (nome database, utente, password)
 cp .env.example .env
-
-# 3. genera la chiave segreta dell'app
-php spark key:generate
-
-# 4. crea il database "gymlog" nel tuo MySQL (da phpMyAdmin o da terminale), poi:
-php spark migrate --all
-
-# 5. riempi le tabelle fisse e crea i 2 utenti
-php spark db:seed DatabaseSeeder
-
-# 6. (FACOLTATIVO) dati finti per vedere i grafici pieni
-php spark db:seed DemoSeeder
-
-# 7. accendi il server
-php spark serve
+php artisan key:generate
+touch database/database.sqlite
+php artisan migrate
+php artisan db:seed
+php artisan db:seed --class=DemoSeeder    # facoltativo: dati finti
+npm install && npm run build
+php artisan serve
 ```
 
-Apri **http://localhost:8080**
-
-| Utente | Email | Password | Ruolo |
-|---|---|---|---|
-| Matteo | `ioelematteo@gmail.com` | `Matteo2026!` | admin |
-| Utente | `user@test.it` | `User2026!` | user |
-
-> ⚠️ Cambia le password dopo il primo accesso: menu in alto a destra → **Profilo**.
+Apri http://localhost:8000 · `ioelematteo@gmail.com` / `Matteo2026!` (admin) · `user@test.it` / `User2026!`
 
 <details>
-<summary>Cosa fa <code>--all</code> in <code>migrate --all</code>?</summary>
+<summary>Cosa fa ogni seeder?</summary>
 
 <br>
 
-Le migration non sono solo nostre: anche **Shield** (il login) e **Settings** hanno le loro tabelle.
-`--all` dice: "esegui le migration di TUTTI i pacchetti, non solo quelle in `app/`".
+| Seeder | Cosa crea |
+|---|---|
+| `RoleSeeder` | i ruoli Spatie `admin` e `user` |
+| `SetStateSeeder` | gli stati delle serie (Ultime kippate, Ultima mezza rep, Spottato, Cedimento, Rest-pause, Fastidio) |
+| `UserSeeder` | i 2 utenti |
+| `WorkoutPlanSeeder` | le schede **Allenamento A** e **B** di Matteo, con i pesi |
+| `DemoSeeder` | (a parte) 10 settimane di allenamenti A/B e pesate finte |
+
+`php artisan db:seed` lancia i primi quattro (`DatabaseSeeder`).
 
 </details>
 
 <details>
-<summary>E se non ho MySQL? Posso usare SQLite?</summary>
+<summary>Le schede A e B (WorkoutPlanSeeder)</summary>
 
 <br>
 
-Sì. Il codice usa solo il Query Builder di CodeIgniter (niente SQL specifico di MySQL),
-quindi funziona anche con SQLite. Nel `.env` metti:
+| Allenamento A | kg | Allenamento B | kg |
+|---|---|---|---|
+| Dip | corpo libero | Squat | 10 |
+| Panca inclinata | 16 | Schiena | 15 |
+| Chest press | 30 | Lat machine | 40 |
+| Alzate laterali | 10 | Pulley | 35 |
+| Shoulder press | 25 | Leg extension | 20 |
+| French press | 20 | Leg curl | 20 |
+| | | Curl | 7.5 |
+| | | Curl hammer | 10 |
 
-```ini
-database.default.database = gymlog.db
-database.default.DBDriver = SQLite3
-```
-
-Il file `gymlog.db` verrà creato dentro `writable/`.
+Serie, rep e recupero li ho scelti io: li cambi dalla pagina della scheda o in `database/seeders/WorkoutPlanSeeder.php`.
 
 </details>
 
@@ -79,289 +68,122 @@ Il file `gymlog.db` verrà creato dentro `writable/`.
 ---
 
 <details>
-<summary><b>🗺️ Cosa fa l'app (le pagine)</b></summary>
+<summary><b>🗺️ Le pagine</b></summary>
 
 <br>
 
 | Pagina | URL | A cosa serve |
 |---|---|---|
-| Home | `/` | Riepilogo: numeri, grafici, progressi |
-| Workout | `/workout` | Scegli cosa alleni e segni le serie **mentre sei in palestra** |
-| Crea Workout | `/workouts/nuovo` | Crei una scheda (Push A, Pull B, Legs…) |
-| Storico | `/storico` | Tutti gli allenamenti fatti |
-| Profilo | `/profilo` | Cambi la tua password |
-| Utenti | `/admin/utenti` | Solo admin: crea, modifica, blocca, elimina utenti |
+| Oggi | `/` | riepilogo: numeri, **come vanno i pesi**, prossima scheda, frequenza |
+| Allenamento | `/allenamento` → `/allenamento/{scheda}` | segni le serie in palestra |
+| Pesi | `/pesi` → `/pesi/{esercizio}` | il tracker dei pesi |
+| Corpo | `/corpo` | peso, % grasso, vita, foto |
+| Coach | `/coach` | chiedi all'IA |
+| Schede | `/schede/nuova`, `/schede/{id}/modifica` | crea e modifica le schede |
+| Storico | `/storico` | tutti gli allenamenti, con i record |
+| Utenti | `/admin/utenti` | solo admin |
 
 <details>
-<summary><b>🏠 Home</b></summary>
+<summary><b>Allenamento: come funziona in palestra</b></summary>
 
 <br>
 
-In alto c'è il filtro periodo: **4 settimane / 3 mesi / 6 mesi**.
-Cambia l'URL in `/?periodo=12` (12 = settimane).
+- Ogni serie ha **il suo peso**: puoi fare 16, 16, 14 kg.
+- Dentro i campi vedi in grigio i numeri dell'**ultima volta** (i "numeri fantasma"). Se è la prima volta, vedi il peso previsto dalla scheda.
+- **✓** = serie fatta. Se i campi sono vuoti copia l'ultima volta e fa partire il **timer di recupero** (vibra alla fine).
+- **+ Serie** aggiunge una riga.
+- **Bozza:** tutto viene salvato nel telefono mentre scrivi. Se la pagina si ricarica, ritrovi tutto (anche il cronometro).
+- Si salvano solo le serie con le rep scritte. Dopo il salvataggio, quell'allenamento diventa "l'ultimo".
 
 <details>
-<summary>Le 4 card con i numeri</summary>
+<summary>Da dove arrivano i numeri fantasma? (codice)</summary>
 
 <br>
 
-| Card | Cosa mostra | Confronto |
-|---|---|---|
-| Allenamenti | quanti ne hai fatti nel periodo | vs periodo precedente (stessa durata) |
-| Media settimanale | allenamenti / settimane, e la stima al mese | vs periodo precedente |
-| Peso corporeo | ultima pesata + mini grafico | quanto è cambiato nel periodo |
-| Volume totale | somma di **kg × rep** di tutte le serie | % vs periodo precedente |
-
-- La freccia verde ↑ = meglio, rossa ↓ = peggio.
-- Il **peso corporeo** ha la pillola grigia: salire di peso può essere bene o male, dipende dal tuo obiettivo. L'app non giudica.
-
-</details>
-
-<details>
-<summary>Grafico "Frequenza allenamenti"</summary>
-
-<br>
-
-- **Settimane:** quanti allenamenti in ognuna delle ultime 8 settimane (da lunedì a domenica).
-- **Mesi:** quanti allenamenti in ognuno degli ultimi 6 mesi.
-- L'ultima barra (settimana/mese in corso) è più accesa.
-
-</details>
-
-<details>
-<summary>Grafico "Peso corporeo" + pesata veloce</summary>
-
-<br>
-
-- Le pesate degli ultimi 3 mesi.
-- Sotto c'è un campo: scrivi il peso di oggi e premi **Salva**.
-- Se pesi due volte nello stesso giorno, **la seconda sostituisce la prima** (una pesata al giorno).
-- Puoi scrivere sia `56,8` che `56.8`.
-
-</details>
-
-<details>
-<summary>"Progressi principali"</summary>
-
-<br>
-
-Per ogni esercizio fatto almeno 2 volte nel periodo:
-
-1. prendo la **serie migliore dell'ultima volta**
-2. la confronto con la **serie migliore della prima volta nel periodo**
-3. mostro la % di miglioramento
-
-"Principali" = i 5 esercizi che hai fatto **più spesso**.
-
-<details>
-<summary>Come capisco qual è la "serie migliore"? (80×6 è meglio di 85×4?)</summary>
-
-<br>
-
-Uso il **massimale stimato** (formula di Epley): `peso × (1 + rep / 30)`
-
-- 80 × 6 → 80 × 1.2 = **96**
-- 85 × 4 → 85 × 1.133 = **96.3**
-
-Quindi 85×4 vince di poco. A corpo libero (peso 0) conto solo le rep.
-La funzione è `Statistiche::punteggioSerie()`.
-
-</details>
-
-</details>
-
-<details>
-<summary>"Prossimi workout"</summary>
-
-<br>
-
-I tuoi workout (n° esercizi, durata stimata, ultima volta) ordinati per **"quale tocca adesso"**:
-prima quelli mai fatti, poi quello che non fai da più tempo.
-Il primo ha l'etichetta **"Tocca a questo"**. Il ▶ ti porta dritto alla pagina Workout.
-
-</details>
-
-</details>
-
-<details>
-<summary><b>🏋️ Workout (la pagina da usare in palestra)</b></summary>
-
-<br>
-
-1. Vai su **Workout** e scegli la scheda (es. Push A).
-2. Vedi tutti gli esercizi con le serie da fare.
-3. Per ogni serie scrivi **kg** e **rep**, e se serve uno **stato**.
-4. In fondo premi **Salva allenamento**.
-
-<details>
-<summary>I "numeri fantasma" (placeholder dell'ultima volta)</summary>
-
-<br>
-
-Dentro i campi vuoti vedi in grigio i numeri dell'**ultima volta che hai fatto questo workout**.
-Sotto ogni serie c'è anche scritto: `↺ ultima 80 kg × 6 · Spottato`.
-
-- **Tocca quella scritta** → copia peso e rep nei campi.
-- Se l'ultima volta avevi fatto più serie del previsto, le righe in più compaiono da sole.
-
-<details>
-<summary>Da dove arrivano questi numeri? (il codice)</summary>
-
-<br>
-
-È esattamente la tua idea:
-
-> "da `singolo_workout` prendi per ogni fk a workout l'ultimo registrato di data"
+`App\Services\Training\LastSessionLookup::forWorkout()` prende l'allenamento più recente di quella scheda:
 
 ```php
-// app/Models/SingoloWorkoutModel.php
-public function ultimoPerWorkout(int $userId, int $workoutId): ?array
-{
-    return $this->where('user_id', $userId)
-        ->where('workout_id', $workoutId)
-        ->orderBy('data_esecuzione', 'DESC') // il più recente per primo
-        ->orderBy('id', 'DESC')              // stessa data? vince l'ultimo salvato
-        ->first();                           // ne prendo solo uno
-}
+return $user->trainingSessions()
+    ->where('workout_id', $workout->id)
+    ->latest('performed_at')   // il più recente
+    ->latest('id')             // a parità, l'ultimo salvato
+    ->first();
 ```
 
-Poi `SerieEseguitaModel::perEsercizioESerie()` organizza le sue serie così:
-
-```
-[esercizio_id => [numero_serie => ['peso' => 80, 'rep' => 6, ...]]]
-```
-
-…e la vista fa `$ultime[$esercizioId][$numeroSerie]` per ogni riga.
+Poi `setsByExercise()` le organizza come `[esercizio][numero serie] => serie`.
 
 </details>
 
 </details>
 
 <details>
-<summary>Il bottone ✓ (serie fatta) e il timer di recupero</summary>
+<summary><b>Pesi: il tracker</b></summary>
 
 <br>
 
-- Premi **✓** quando finisci una serie.
-- Se i campi sono **vuoti**, copia da solo i numeri dell'ultima volta (hai rifatto uguale? un tocco e basta).
-- Parte il **timer di recupero** in basso, con i secondi impostati nella scheda (es. 2:00).
-- Bottoni del timer: **+15s** e **Salta**. Alla fine il telefono **vibra** (se il browser lo permette).
+Per ogni esercizio e ogni allenamento `WeightProgress` calcola:
+
+- **peso medio** delle serie (Squat 10, 10, 9, 9 → 9.5 kg) ← il numero principale
+- **peso massimo**
+- **massimale stimato** (Epley: peso × (1 + rep/30)) per capire qual è la serie migliore
+- **volume** (kg × rep)
+
+La pagina `/pesi` mostra il peso medio dell'ultima volta, la variazione % dalla prima volta e un mini grafico.
+Il dettaglio mostra il grafico (linea = medio, punti rossi = massimo) e la tabella.
 
 </details>
 
 <details>
-<summary>Gli stati della serie</summary>
+<summary><b>Corpo: misure e foto</b></summary>
 
 <br>
 
-Ogni serie può avere uno stato (tabella `stati`):
-
-| Stato | Quando usarlo |
-|---|---|
-| Ultime kippate | le ultime rep con slancio |
-| Ultima mezza rep | l'ultima rep non completa |
-| Spottato | qualcuno ti ha aiutato |
-| Cedimento | arrivato a cedimento |
-| Rest-pause | piccole pause dentro la serie |
-| Fastidio | dolore o fastidio |
-
-Di default è **"Pulita"** (= nessuno stato).
+- **Una misurazione al giorno**: se ti pesi di nuovo oggi, sostituisce quella di prima.
+- Peso obbligatorio, % grasso e vita facoltativi.
+- **Foto private**: non sono mai pubbliche. Passano da `PhotoController@show`, che controlla che siano tue.
+- In locale stanno in `storage/app/private/progress-photos/{id utente}`; su Laravel Cloud nel bucket.
 
 </details>
 
 <details>
-<summary>La bozza: se chiudi la pagina non perdi niente</summary>
+<summary><b>Coach IA (DeepSeek)</b></summary>
 
 <br>
 
-Mentre scrivi, tutto viene salvato **nel browser del telefono** (`localStorage`).
-Se la pagina si ricarica, il telefono si blocca o chiudi per sbaglio:
+1. Scrivi una domanda (o lasciala vuota per un'analisi generale).
+2. `CoachContext` raccoglie i tuoi dati delle ultime 6 settimane: schede, **ogni serie** con peso, rep e stato, il trend dei pesi, le misure, l'elenco delle foto.
+3. `SystemPrompt` legge il prompt da `resources/prompts/coach.md`.
+4. `DeepSeekClient` manda tutto a DeepSeek; la risposta viene salvata (`coach_reports`) e la rileggi quando vuoi.
 
-- riapri lo stesso workout → ritrovi tutto, anche il cronometro
-- compare l'avviso **"Ho ripreso l'allenamento che avevi lasciato a metà"**
-- **Ricomincia da zero** cancella la bozza
+> ⚠️ **Le foto:** i modelli di DeepSeek leggono solo testo. All'IA arrivano data, posa e note delle foto, non le immagini.
+> Se un giorno vuoi l'analisi delle immagini, scrivi un nuovo `AiClient` per un modello che vede le immagini (vedi "Cambiare un pezzo").
 
-La bozza si cancella da sola dopo il salvataggio, e viene ignorata se è più vecchia di 12 ore.
+<details>
+<summary>Il system prompt: cosa dice</summary>
+
+<br>
+
+È in `resources/prompts/coach.md`. In breve:
+
+- chi è: il tuo coach, parla italiano, diretto
+- cosa riceve: i tuoi dati (e che le foto non le vede)
+- come ragiona: prima i numeri, cerca schemi (esercizi fermi, cedimenti, fastidi, peso corporeo che cambia troppo in fretta)
+- come risponde: sempre con **Cosa noto / Cosa sta andando bene / Cosa cambierei / Prossimo allenamento**
+- regole: niente diagnosi mediche, niente dati inventati, max ~350 parole
+
+Lo modifichi lì, senza toccare il codice.
 
 </details>
 
 <details>
-<summary>"Chiudi allenamento": data, peso corporeo, note</summary>
+<summary>Costi e limiti</summary>
 
 <br>
 
-- **Data:** di default oggi. Puoi mettere un giorno passato se ti eri dimenticato di segnarlo.
-- **Peso corporeo:** facoltativo, finisce nel grafico del peso.
-- **Note:** come è andata. La rivedi in cima la prossima volta che fai lo stesso workout.
-- **Durata:** la prende dal cronometro in alto (se la data è oggi).
-- Si salvano **solo le serie con le rep scritte**. Righe vuote = serie non fatta.
-
-Dopo il salvataggio vai al riepilogo dell'allenamento. **Quell'allenamento diventa "l'ultimo"**, ma i vecchi restano nello storico.
+- Massimo **10 domande all'ora** per utente (`throttle:10,60` sulla rotta).
+- Senza `DEEPSEEK_API_KEY` la pagina funziona e ti dice cosa manca.
 
 </details>
-
-</details>
-
-<details>
-<summary><b>➕ Crea Workout</b></summary>
-
-<br>
-
-- **Nome**, **descrizione** (facoltativa), **colore**.
-- Esercizi: nome, serie, rep obiettivo (es. `8-10`), **peso** di lavoro (es. `80`), recupero, note.
-- Scrivendo il nome compaiono i **suggerimenti** dal catalogo.
-- Il **peso** della scheda compare nella pagina Workout accanto al nome dell'esercizio, e fa da placeholder la prima volta che fai quel workout.
-- Esercizio **nuovo**? Lo crea in automatico nel catalogo.
-- **↑ ↓** cambiano l'ordine, **✕** toglie la riga.
-
-<details>
-<summary>La lettera nel disco colorato</summary>
-
-<br>
-
-`Push A` → **A**, `Pull B` → **B**, `Legs` → **L**, `Giorno 2` → **2**.
-Regola: se l'ultima parola è lunga 1-2 caratteri uso quella, sennò la prima lettera.
-Funzione PHP: `iniziale_workout()` (con la sua gemella in JS per l'anteprima).
-
-</details>
-
-<details>
-<summary>Cosa succede se modifico o elimino un workout?</summary>
-
-<br>
-
-- **Modifico:** gli esercizi vecchi della scheda vengono sostituiti. Lo storico **non si rompe**, perché le serie fatte puntano all'**esercizio** (`esercizi.id`), non alla riga della scheda.
-- **Elimino:** è un *soft delete*: il workout sparisce dalle liste, ma nel database resta (con `deleted_at` pieno). Così lo storico sa ancora come si chiamava.
-
-</details>
-
-</details>
-
-<details>
-<summary><b>🕓 Storico</b></summary>
-
-<br>
-
-- Lista di tutti gli allenamenti (12 per pagina).
-- Aprendone uno vedi: durata, volume, numero serie, ogni serie con il suo stato.
-- **Record personale:** compare quando la serie migliore di quel giorno batte **tutte** quelle fatte prima per quell'esercizio.
-- **Rifallo** → apre lo stesso workout.
-- **Elimina** → per gli allenamenti salvati per sbaglio.
-
-</details>
-
-<details>
-<summary><b>👥 Utenti (solo admin)</b></summary>
-
-<br>
-
-- Crea utenti (nome, email, password, ruolo).
-- Modifica (password facoltativa: se la lasci vuota non cambia).
-- **Blocca / sblocca:** un utente bloccato non riesce a fare login.
-- **Elimina:** cancella l'utente **e tutti i suoi dati** (workout, allenamenti, pesate).
-- Non puoi bloccare, eliminare o togliere il ruolo admin **a te stesso** (resteresti chiuso fuori).
-
-La registrazione pubblica è **spenta**: gli account li crea l'admin. Meno porte aperte = meno bot.
 
 </details>
 
@@ -370,250 +192,134 @@ La registrazione pubblica è **spenta**: gli account li crea l'admin. Meno porte
 ---
 
 <details>
-<summary><b>🧱 Architettura (come è fatto dentro)</b></summary>
+<summary><b>🧱 Architettura: le scatole</b></summary>
 
 <br>
 
-**TL;DR:** classico **MVC** di CodeIgniter. Il Controller riceve la richiesta, chiede i dati ai Model, li passa alla View.
-I calcoli "pesanti" stanno in **Libraries**, le funzioni di formattazione in **Helpers**.
+**L'idea:** il controller non calcola niente. Chiede a dei **servizi** (le scatole) e passa il risultato alla vista.
+Ogni servizio riceve quello che gli serve **nel costruttore** (dependency injection): Laravel glielo consegna da solo.
+
+```
+Richiesta → Rotta → Controller → Servizi → Model → Database
+                         ↓
+                       Vista (Blade + componenti)
+```
 
 <details>
-<summary>La mappa delle cartelle</summary>
+<summary>La mappa delle scatole</summary>
 
 <br>
 
 ```
 app/
-├── Config/
-│   ├── Routes.php        ← tutti gli URL dell'app
-│   ├── Filters.php       ← anti-bot: honeypot, CSRF, limite login
-│   ├── Auth.php          ← impostazioni di Shield (login)
-│   ├── AuthGroups.php    ← ruoli admin / user e permessi
-│   └── Gym.php           ← le NOSTRE liste fisse (gruppi muscolari, colori, periodi...)
-├── Controllers/          ← ricevono la richiesta, rispondono con una pagina
-│   ├── BaseController.php    ← il "padre": userId(), indietroConErrori(), nonTrovato()
-│   ├── Home.php
-│   ├── Allenamento.php       ← pagina Workout (scegli, esegui, salva)
-│   ├── Workouts.php          ← Crea / modifica / elimina workout
-│   ├── Storico.php
-│   ├── Peso.php
-│   ├── Profilo.php
-│   └── Admin/Utenti.php
-├── Models/               ← parlano col database (una classe per tabella)
-├── Libraries/
-│   ├── Statistiche.php   ← calcoli PURI (niente database): settimane, mesi, %, 1RM
-│   └── Dashboard.php     ← mette insieme i dati della Home
-├── Helpers/
-│   ├── gym_helper.php    ← formattare: kg(), durata(), data_breve(), quando()...
-│   └── ui_helper.php     ← pezzi di HTML: icona(), trend(), sparkline(), errore(), componente()
-├── Database/
-│   ├── Migrations/       ← creano le tabelle (una per file)
-│   └── Seeds/            ← riempiono le tabelle (stati, esercizi, utenti, demo)
-├── Language/it/          ← messaggi di errore in italiano
-└── Views/
-    ├── layouts/app.php   ← la cornice: sidebar, barra in alto, menu mobile
-    ├── partials/         ← pezzi riusabili (card, righe, stato vuoto, paginazione)
-    ├── home/ allenamento/ workouts/ storico/ profilo/ admin/ auth/
-public/
-├── assets/css/           ← base, layout, componenti + un file per pagina
-├── assets/js/            ← app.js + un file per pagina
-└── assets/vendor/        ← Chart.js (copiato qui: funziona anche senza internet)
-tests/unit/StatisticheTest.php
+├── Contracts/                    ← le "prese" (interfacce): cosa serve, non come
+│   ├── AiClient.php              ← "qualcosa che risponde a una domanda"
+│   └── PhotoStorage.php          ← "qualcosa che salva le foto"
+├── Services/
+│   ├── Training/
+│   │   ├── LastSessionLookup     ← l'ultimo allenamento di una scheda (numeri fantasma)
+│   │   ├── SessionRecorder       ← salva allenamento + serie (transazione)
+│   │   ├── WorkoutPlanner        ← crea / modifica una scheda
+│   │   └── NextWorkoutPicker     ← quale scheda tocca adesso
+│   ├── Progress/
+│   │   ├── Formula               ← calcoli puri (%, 1RM, media)
+│   │   ├── Frequency             ← allenamenti per settimana / mese
+│   │   └── WeightProgress        ← il tracker dei pesi
+│   ├── Body/
+│   │   ├── BodyLog               ← peso e misure
+│   │   └── DiskPhotoStorage      ← implementa PhotoStorage su un disco Laravel
+│   ├── Coach/
+│   │   ├── Coach                 ← unisce prompt + dati + IA
+│   │   ├── CoachContext          ← i tuoi dati in testo
+│   │   ├── SystemPrompt          ← legge resources/prompts/coach.md
+│   │   ├── DeepSeekClient        ← implementa AiClient con DeepSeek
+│   │   └── MissingKeyAiClient    ← implementa AiClient quando manca la chiave
+│   └── Dashboard/DashboardData   ← mette insieme i pezzi per la pagina "Oggi"
+├── Providers/GymServiceProvider  ← il "quadro elettrico": quale scatola va in quale presa
+├── Http/Controllers/             ← sottili: leggono, chiamano un servizio, rispondono
+├── Http/Requests/                ← la validazione di ogni form
+└── Models/                       ← una classe per tabella
 ```
 
 </details>
 
 <details>
-<summary>Il viaggio di una richiesta (es. apri la Home)</summary>
+<summary>Dependency injection, spiegata con un esempio</summary>
 
 <br>
 
-```
-Browser: GET /
-   │
-   ▼
-Routes.php ─── "/" → Home::index, dentro il gruppo con filtro "session"
-   │
-   ▼
-Filtri "before": honeypot → csrf → session (sei loggato? no → vai al login)
-   │
-   ▼
-Controllers/Home.php  index()
-   │   new Dashboard($userId, 4)
-   │      └── chiede ai Model: SingoloWorkoutModel, SerieEseguitaModel, PesoCorporeoModel...
-   │      └── usa Statistiche per contare settimane/mesi e calcolare le %
-   ▼
-view('home/index', [...dati...])
-   │   extend('layouts/app')  → la cornice
-   │   componente('partials/stat_card', ...) → i pezzetti
-   ▼
-Filtri "after": honeypot (aggiunge il campo-trappola ai form), secureheaders
-   │
-   ▼
-Browser: riceve l'HTML. home.js disegna i grafici con Chart.js
-```
-
-</details>
-
-<details>
-<summary>Controller: "sottili"</summary>
-
-<br>
-
-Un controller fa solo 3 cose:
-
-1. **legge** l'input (`$this->request->getPost()`)
-2. **valida** (`$this->validate($regole)`)
-3. **chiama un Model** e **risponde** (`view()` o `redirect()`)
-
-Le parti lunghe sono spezzate in **metodi privati con nomi parlanti**:
-`serieDalForm()`, `dataEsecuzione()`, `workoutDelUtente()`, `righeDaMostrare()`…
-
-<details>
-<summary>Perché c'è un BaseController con userId() e nonTrovato()?</summary>
-
-<br>
-
-Perché li usano tutti. Invece di scrivere ogni volta `(int) auth()->id()`
-o `throw PageNotFoundException::forPageNotFound()`, scrivi `$this->userId()` e `$this->nonTrovato()`.
-
-</details>
-
-</details>
-
-<details>
-<summary>Model: una classe per tabella</summary>
-
-<br>
-
-| Model | Tabella | Metodi principali |
-|---|---|---|
-| `WorkoutModel` | workouts | `trovaDelUtente()`, `conRiepilogo()`, `prossimi()`, `salvaConEsercizi()` |
-| `WorkoutEsercizioModel` | workout_esercizi | `perWorkout()`, `riepilogoPerWorkout()`, `sostituisci()` |
-| `EsercizioModel` | esercizi | `elenco()`, `trovaOCrea()` |
-| `SingoloWorkoutModel` | singolo_workout | `ultimoPerWorkout()`, `ultimi()`, `dateTra()`, `salvaConSerie()` |
-| `SerieEseguitaModel` | serie_eseguite | `perEsercizioESerie()`, `volumiTra()`, `miglioriPunteggiPrima()` |
-| `PesoCorporeoModel` | peso_corporeo | `registra()`, `andamento()`, `ultime()` |
-| `StatoModel` | stati | `elenco()`, `perId()` |
-
-Regola: **ogni query sta in un Model**, con un nome che dice cosa trova.
-Nei controller non c'è mai SQL.
-
-<details>
-<summary>Perché "trovaDelUtente()" e non semplicemente find()?</summary>
-
-<br>
-
-Sicurezza. `find(5)` trova il workout 5 di **chiunque**.
-`trovaDelUtente(5, $userId)` lo trova solo se **è tuo**.
-Così nessuno può vedere i dati degli altri cambiando il numero nell'URL: riceve un 404.
-
-</details>
-
-<details>
-<summary>Cos'è una "transazione" (transStart / transComplete)?</summary>
-
-<br>
-
-Quando salvi un allenamento scrivi in **due** tabelle: `singolo_workout` (1 riga) e `serie_eseguite` (tante righe).
-Se a metà qualcosa si rompe, senza transazione resterebbe un allenamento senza serie.
-Con la transazione: **o si salva tutto, o niente**.
+Il `Coach` **non sa** che esiste DeepSeek. Chiede solo "un AiClient":
 
 ```php
-$this->db->transStart();
-// ... tutti gli insert ...
-$this->db->transComplete();
+class Coach
+{
+    public function __construct(
+        private AiClient $ai,          // chi risponde
+        private SystemPrompt $prompt,  // le istruzioni
+        private CoachContext $context, // i tuoi dati
+    ) {}
+}
 ```
 
-</details>
+Chi decide quale AiClient? `GymServiceProvider`:
+
+```php
+$this->app->bind(AiClient::class, fn () => new DeepSeekClient(...));
+```
+
+Nei test lo sostituisco con una risposta finta (`Http::fake()`), e il Coach non se ne accorge.
 
 </details>
 
 <details>
-<summary>Libraries: Statistiche e Dashboard</summary>
+<summary>Cambiare un pezzo (es. un'altra IA)</summary>
 
 <br>
 
-- **`Statistiche`**: funzioni **pure** (dai numeri, ricevi numeri; niente database).
-  - `contaPerSettimana()`, `contaPerMese()`, `variazione()`, `massimaleStimato()`, `punteggioSerie()`
-  - Essendo pure sono facili da testare → `tests/unit/StatisticheTest.php`
-- **`Dashboard`**: prepara tutti i pezzi della Home (`cards()`, `frequenza()`, `progressi()`…).
-  Così il controller Home è lungo 30 righe.
+1. Crea `app/Services/Coach/OpenAiClient.php` che `implements AiClient` (un solo metodo: `chat()`).
+2. In `GymServiceProvider` cambia la riga del `bind(AiClient::class, ...)`.
+3. Fine. Coach, controller, viste e test restano uguali.
 
-> In Laravel le chiameresti **Services**. In CodeIgniter la cartella "ufficiale" è `Libraries`.
-
-<details>
-<summary>Perché i conti per settimana/mese li faccio in PHP e non in SQL?</summary>
-
-<br>
-
-1. In SQL dovrei usare funzioni diverse per MySQL (`YEARWEEK`) e SQLite (`strftime`). In PHP funziona ovunque.
-2. In PHP posso **testarlo** senza database.
-3. Le settimane **vuote** (0 allenamenti) in SQL non esistono; in PHP le preparo io a zero, così il grafico non ha buchi.
-4. Sono pochi dati (una persona fa ~200 allenamenti l'anno): nessun problema di velocità.
-
-</details>
+Stessa cosa per le foto: un'altra classe che `implements PhotoStorage`.
 
 </details>
 
 <details>
-<summary>Helpers: piccole funzioni globali</summary>
+<summary>Componenti Blade (i pezzi della grafica)</summary>
 
 <br>
 
-Caricati in automatico ovunque (`app/Config/Autoload.php` → `$helpers`).
+In `resources/views/components/`. Li usi come tag HTML:
 
-| Funzione | Esempio |
+| Componente | Uso |
 |---|---|
-| `kg(82.50)` | `"82.5"` |
-| `volume_breve(28400)` | `"28.4k"` |
-| `con_segno(-0.8)` | `"−0.8"` |
-| `durata(72)` | `"1h 12m"` |
-| `data_breve('2026-10-20')` | `"20 Ott 2026"` |
-| `quando('2026-10-20')` | `"3 giorni fa"` |
-| `serie_testo(80, 6)` | `"80 kg × 6"` |
-| `iniziale_workout('Push A')` | `"A"` |
-| `icona('home')` | un `<svg>` |
-| `trend(+3)` | la pillola verde `↑ +3` |
-| `sparkline([...])` | mini grafico a linea in SVG |
-| `errore('nome')` | il messaggio d'errore sotto un campo |
-| `componente('partials/vuoto', [...])` | un pezzo di vista (vedi sotto) |
+| `<x-layout>` | la cornice di ogni pagina (barra in alto, menu in basso su telefono) |
+| `<x-panel title="...">` | un pannello con titolo |
+| `<x-stat label="..." value="...">` | numero grande |
+| `<x-plate color="rosso" letter="A">` | il disco della scheda |
+| `<x-trend :delta="...">` | la pillola ↑ +3 |
+| `<x-spark :values="...">` | mini grafico in SVG |
+| `<x-field label="..." name="...">` | campo di un form con l'errore |
+| `<x-empty>` | "non c'è ancora niente" |
+| `<x-delete-button>` | elimina con conferma |
+| `<x-icon name="...">` | icone |
 
 </details>
 
 <details>
-<summary>Views: layout, sezioni, componenti</summary>
+<summary>JavaScript: un modulo per cosa</summary>
 
 <br>
 
-- Ogni pagina fa `$this->extend('layouts/app')` → usa la cornice comune.
-- Riempie i "buchi" della cornice con `$this->section('contenuto')` … `$this->endSection()`.
-- Le sezioni `css` e `js` servono per caricare **solo** i file di quella pagina.
+`resources/js/app.js` accende i moduli in `resources/js/modules/`. Ognuno parte solo se nella pagina c'è il suo elemento.
 
-<details>
-<summary>Perché componente() e non view() per i pezzetti?</summary>
-
-<br>
-
-Trappola di CodeIgniter: `view()` **ricorda i dati** tra una chiamata e l'altra.
-Se al primo "stato vuoto" passi un `'link'` e al secondo no, il secondo mostra **lo stesso link** del primo!
-
-`componente()` chiama `view()` con `saveData = false`: ogni pezzo vede **solo** i dati che gli passi.
-
-</details>
-
-</details>
-
-<details>
-<summary>CSS e JavaScript: niente build, niente framework</summary>
-
-<br>
-
-- **CSS puro** con variabili (`--accento`, `--superficie`…): cambi un colore in `base.css` e cambia ovunque.
-- Nomi delle classi in stile **BEM**: `.blocco`, `.blocco__pezzo`, `.blocco--variante`.
-- **JS vanilla** (niente jQuery, niente React). Un file per pagina, diviso in funzioni con nomi parlanti.
-- Gli elementi che il JS usa hanno attributi `data-qualcosa` (es. `data-fatta`, `data-copia`): così puoi cambiare le classi CSS senza rompere il JS.
-- Unica libreria: **Chart.js** per i due grafici grandi della Home. I mini grafici delle card sono SVG generati in PHP.
+| Modulo | Cosa fa |
+|---|---|
+| `common.js` | conferme, filtro periodo, menu, pulizia bozza |
+| `charts.js` | i grafici (Chart.js) da `<canvas data-chart>` |
+| `session-logger.js` | cronometro, ✓, + serie, recupero, bozza |
+| `plan-editor.js` | righe del form scheda |
+| `coach.js` | suggerimenti e "sto pensando…" |
 
 </details>
 
@@ -626,199 +332,46 @@ Se al primo "stato vuoto" passi un `'link'` e al secondo no, il secondo mostra *
 
 <br>
 
-<details>
-<summary>Lo schema (chi punta a chi)</summary>
-
-<br>
-
 ```
-users (Shield)
-  │
-  ├──< workouts ──────────────< workout_esercizi >──── esercizi
-  │       (la scheda)               (cosa c'è dentro)     (catalogo)
-  │                                                          │
-  ├──< singolo_workout ──< serie_eseguite >──────────────────┘
-  │       (un allenamento)    (ogni serie: peso, rep) ──> stati
-  │
-  └──< peso_corporeo
+users ─┬─< workouts ──< workout_exercises >── exercises
+       │      (scheda)    (esercizio + serie + rep + PESO previsto)
+       │
+       ├─< training_sessions ──< session_sets >── exercises
+       │      (allenamento fatto)  (ogni serie: PESO + rep + stato) ──> set_states
+       │
+       ├─< body_entries      (peso, % grasso, vita: una al giorno)
+       ├─< progress_photos   (data, posa, percorso del file)
+       └─< coach_reports     (domanda, risposta, modello)
 ```
 
-`──<` = "uno a molti". Es: un utente ha **molti** workout.
-
-</details>
-
 <details>
-<summary>Le tabelle, una per una</summary>
+<summary>Dalla tua idea ai nomi delle tabelle</summary>
 
 <br>
 
-<details>
-<summary><code>workouts</code> — la scheda</summary>
+| Tu | Tabella | Perché questo nome |
+|---|---|---|
+| tabella workout | `workouts` + `workout_exercises` | la scheda e cosa c'è dentro |
+| singolo_workout | `training_sessions` | un allenamento fatto |
+| tracciamento rep/peso | `session_sets` | una riga **per ogni serie**, con il suo peso |
+| stati | `set_states` | |
+| peso corporeo | `body_entries` | contiene anche % grasso e vita |
 
-<br>
-
-| Colonna | Cosa |
-|---|---|
-| user_id | di chi è |
-| nome | "Push A" |
-| descrizione | facoltativa |
-| colore | verde, blu, viola, arancio, rosa, ciano |
-| deleted_at | pieno = eliminato (soft delete) |
+Nomi in inglese perché Laravel "indovina" le tabelle dai nomi dei Model (Workout → workouts). Tutto il resto (UI, commenti) è in italiano.
 
 </details>
 
 <details>
-<summary><code>esercizi</code> — il catalogo</summary>
-
-<br>
-
-`nome` (unico) + `gruppo_muscolare`. È **condiviso** tra gli utenti: così "Panca piana" è sempre lo stesso esercizio e i progressi si confrontano anche se lo fai in workout diversi.
-
-</details>
-
-<details>
-<summary><code>workout_esercizi</code> — cosa c'è dentro una scheda</summary>
-
-<br>
-
-| Colonna | Esempio |
-|---|---|
-| workout_id | Push A |
-| esercizio_id | Panca piana |
-| ordine | 1 |
-| serie | 4 |
-| rep_target | "6-8" |
-| peso | 80.00 (facoltativo) |
-| recupero_secondi | 120 |
-| note | "fermo al petto" |
-
-</details>
-
-<details>
-<summary><code>singolo_workout</code> — un allenamento fatto</summary>
-
-<br>
-
-| Colonna | Cosa |
-|---|---|
-| user_id, workout_id | chi e quale scheda |
-| data_esecuzione | quando |
-| durata_minuti | dal cronometro |
-| note | come è andata |
-
-</details>
-
-<details>
-<summary><code>serie_eseguite</code> — ogni serie fatta</summary>
-
-<br>
-
-| Colonna | Esempio |
-|---|---|
-| singolo_workout_id | l'allenamento |
-| esercizio_id | Panca piana |
-| numero_serie | 2 |
-| peso | 80.00 |
-| rep | 6 |
-| stato_id | Spottato (o vuoto) |
-
-</details>
-
-<details>
-<summary><code>stati</code> e <code>peso_corporeo</code></summary>
-
-<br>
-
-- **stati:** nome, descrizione, colore, ordine. Riempita dal `StatiSeeder`.
-- **peso_corporeo:** user_id, peso, data. **Una riga al giorno** per utente (chiave unica su `user_id + data`).
-
-</details>
-
-<details>
-<summary>Le tabelle di Shield (non toccarle a mano)</summary>
-
-<br>
-
-| Tabella | Cosa contiene |
-|---|---|
-| users | username, stato (bloccato?), ultimo accesso |
-| auth_identities | email + password criptata |
-| auth_groups_users | il ruolo (admin / user) |
-| auth_logins | i tentativi di login |
-| auth_remember_tokens | il "ricordami" |
-| auth_permissions_users, auth_token_logins | non usate da noi |
-| settings | impostazioni salvate a db (pacchetto Settings) |
-
-</details>
-
-</details>
-
-<details>
-<summary>Perché l'allenamento è diviso in DUE tabelle?</summary>
-
-<br>
-
-Nella tua idea c'era una tabella "singolo allenamento con tracciamento di rep".
-Ma un allenamento ha **tante** serie (20-25). Metterle tutte in una riga vorrebbe dire colonne tipo `rep_1, rep_2, … rep_30`: impossibile da interrogare.
-
-Quindi:
-- `singolo_workout` = **l'intestazione** (chi, cosa, quando) → 1 riga
-- `serie_eseguite` = **il dettaglio** → 1 riga per serie
-
-È la stessa cosa di "ordine" e "righe dell'ordine" in un e-commerce.
-
-</details>
-
-<details>
-<summary>Come prendiamo i dati (le 3 regole che hai chiesto)</summary>
-
-<br>
-
-<details>
-<summary>1. Ultime rep e serie fatte → <code>ultimoPerWorkout()</code></summary>
-
-<br>
-
-Da `singolo_workout`, per quel `workout_id`, prendo la riga con la `data_esecuzione` più recente. Poi le sue serie diventano i placeholder.
-
-</details>
-
-<details>
-<summary>2. Frequenza → <code>dateTra()</code> + <code>Statistiche</code></summary>
-
-<br>
-
-Da `singolo_workout` prendo le date in un periodo, poi in PHP:
-- `contaPerSettimana()` → andamento settimana per settimana
-- `contaPerMese()` → per mese
-- media mensile = allenamenti del periodo ÷ giorni × 30.4
-
-</details>
-
-<details>
-<summary>3. Selezione workout → <code>WorkoutModel::prossimi()</code></summary>
-
-<br>
-
-Da `workouts` prendo le schede dell'utente con un riepilogo (n° esercizi, gruppi muscolari, ultima volta, durata media) e le ordino per "quale tocca adesso".
-
-</details>
-
-</details>
-
-<details>
-<summary>Foreign key e CASCADE: cosa si cancella da solo</summary>
+<summary>Cosa si cancella da solo (cascade)</summary>
 
 <br>
 
 | Se cancelli… | …spariscono anche |
 |---|---|
-| un utente | i suoi workout, allenamenti, serie, pesate |
+| un utente | tutto il suo (schede, allenamenti, serie, misure, foto, report) |
 | un allenamento | le sue serie |
-| un workout (eliminazione vera, non soft) | i suoi esercizi-scheda e i suoi allenamenti |
-| uno stato | niente: le serie restano, con stato vuoto (`SET NULL`) |
-
-Un esercizio del catalogo **non** si può cancellare se è usato (`RESTRICT`).
+| una scheda | **niente**: è un *soft delete*, lo storico resta |
+| uno stato | le serie restano, senza stato |
 
 </details>
 
@@ -827,258 +380,109 @@ Un esercizio del catalogo **non** si può cancellare se è usato (`RESTRICT`).
 ---
 
 <details>
-<summary><b>🔐 Login, ruoli e anti-bot</b></summary>
+<summary><b>🔐 Login, ruoli, anti-bot</b></summary>
 
 <br>
 
-<details>
-<summary>Shield = Breeze + Spatie (in versione CodeIgniter)</summary>
-
-<br>
-
-**Shield** è la libreria di login **ufficiale** di CodeIgniter 4.
-
-| Laravel | CodeIgniter Shield |
+| Cosa | Come |
 |---|---|
-| Breeze (login/logout) | `service('auth')->routes($routes)` in Routes.php |
-| `auth()->user()` | `auth()->user()` (uguale!) |
-| `auth()->id()` | `auth()->id()` |
-| middleware `auth` | filtro `session` |
-| Spatie: ruoli | **gruppi** in `Config/AuthGroups.php` |
-| `$user->hasRole('admin')` | `$user->inGroup('admin')` |
-| `$user->can('...')` | `$user->can('utenti.gestisci')` |
-| middleware `role:admin` | filtro `group:admin` |
-
-Abbiamo **solo cambiato l'aspetto** del login (`Views/auth/login.php`). La logica è tutta di Shield.
-
-</details>
-
-<details>
-<summary>I due ruoli</summary>
-
-<br>
-
-- **user** → usa l'app per i suoi allenamenti.
-- **admin** → come user, più la pagina **Utenti** (permesso `utenti.gestisci`).
-
-Nel codice: `is_admin()` (helper nostro) oppure `auth()->user()->inGroup('admin')`.
-
-</details>
-
-<details>
-<summary>Le 4 protezioni anti-bot / anti-attacco</summary>
-
-<br>
-
-<details>
-<summary>1. Honeypot (il "vasetto di miele")</summary>
-
-<br>
-
-In ogni form c'è un campo **nascosto** (`sito_web`). Un umano non lo vede e lo lascia vuoto.
-Un bot compila tutto → il campo è pieno → richiesta bloccata.
-È un filtro **già incluso in CodeIgniter**, acceso in `Config/Filters.php`.
-
-</details>
-
-<details>
-<summary>2. Limite tentativi sul login (auth-rates)</summary>
-
-<br>
-
-Massimo **10 richieste al minuto per IP** sulla pagina di login. Un bot che prova mille password viene fermato.
-È un filtro di Shield, acceso in `Config/Filters.php` → `$filters`.
-
-</details>
-
-<details>
-<summary>3. CSRF</summary>
-
-<br>
-
-Ogni form ha un token segreto (`<?= csrf_field() ?>`). Un altro sito non può inviare form "a nome tuo".
-Acceso per tutti i POST in `Config/Filters.php`.
-
-</details>
-
-<details>
-<summary>4. Password forti + registrazione chiusa</summary>
-
-<br>
-
-- La regola `strong_password[]` di Shield rifiuta password corte, comuni (`password`, `12345678`…) o simili al nome/email.
-- Registrazione pubblica **spenta**: gli utenti li crea l'admin.
-
-</details>
-
-</details>
+| Login | `LoginController` con `Auth::attempt` (Breeze non serve: login e logout sono 30 righe) |
+| Ruoli | **Spatie Permission**: `admin`, `user`. Nel codice: `$user->hasRole('admin')`, nelle viste `@role('admin')`, nelle rotte `->middleware('role:admin')` |
+| Registrazione | spenta: gli utenti li crea l'admin |
+| Anti-bot | **honeypot** (campo nascosto `website` in `LoginRequest`), **5 tentativi al minuto** (`throttle:5,1`), CSRF su ogni form |
+| Utente bloccato | `is_active = false`: non riesce a fare login |
+| Dati degli altri | `ChecksOwnership::ensureOwns()`: se non è tuo → 404 |
+| Password | `Password::min(8)->uncompromised()`: rifiuta quelle finite in furti di dati |
 
 </details>
 
 ---
 
 <details>
-<summary><b>🤔 Le scelte fatte (e le alternative scartate)</b></summary>
+<summary><b>🎨 La grafica (e perché)</b></summary>
 
 <br>
 
-<details>
-<summary>Design</summary>
+Il tema scuro con il verde menta era il look da "app fatta dall'IA". La nuova direzione viene dalla palestra vera:
 
-<br>
+- **Cemento chiaro** come sfondo, **inchiostro nero** per testo e barre.
+- **I colori dei dischi olimpici** (rosso 25 · blu 20 · giallo 15 · verde 10 · bianco 5) come colore delle schede.
+- **Il disco**: il badge della scheda è un disco visto di lato.
+- **Big Shoulders Display** per titoli e numeri, come un tabellone; **IBM Plex Sans/Mono** per il testo e i dati.
+- Angoli quasi vivi (3–5 px), niente ombre, niente gradienti.
+- Il **rosso** solo dove conta: il prossimo allenamento, l'ultimo valore nei grafici, i record, "Salva allenamento".
 
-- **Scuro + verde menta**, come la tua immagine, ma più pulito: niente foto negli elenchi.
-- **Il "disco":** il badge del workout è disegnato come un **disco del bilanciere** (bordo + anello interno), con la lettera al centro. È il dettaglio "firma" dell'app.
-- **Font:** *Archivo* largo per i titoli (un po' sportivo), *Geist* per il testo, *Geist Mono* per i numeri (kg, rep, tempi: si leggono meglio e restano in colonna).
-- **Telefono prima di tutto** nella pagina Workout: campi alti 46px, testo 18px, ✓ grande, menu in basso.
-- Sui telefoni i campi hanno testo ≥ 16px: sotto quella misura iPhone fa lo zoom quando li tocchi.
-
-</details>
-
-<details>
-<summary>Codice</summary>
-
-<br>
-
-| Scelta | Perché | Alternativa scartata |
-|---|---|---|
-| Shield | è l'auth ufficiale, sicura, con ruoli | auth fatta a mano (più codice da mantenere e meno sicura) |
-| CSS puro | niente build, si apre e si capisce | Tailwind (serve un build step) |
-| JS vanilla | niente da installare | jQuery / Alpine / React |
-| Calcoli in PHP | funziona con MySQL e SQLite, si testa | query SQL complesse |
-| Chart.js in locale | funziona anche senza rete in palestra | CDN |
-| Bozza in localStorage | non perdi l'allenamento se si ricarica la pagina | salvataggio automatico sul server (più complicato) |
-| Soft delete sui workout | lo storico resta leggibile | cancellazione vera |
-| Catalogo esercizi condiviso | progressi confrontabili tra workout | esercizi copiati in ogni scheda |
-
-</details>
-
-<details>
-<summary>Sessione e CSRF a 4 ore</summary>
-
-<br>
-
-Di default CodeIgniter fa scadere sessione e token dopo 2 ore.
-Un allenamento + qualche pausa può superarle → al salvataggio ti troveresti sloggato.
-Li ho portati a **4 ore** (`Config/Session.php`, `Config/Security.php`).
-E comunque, anche se scadesse, la **bozza** ti salva i dati.
-
-</details>
+I token stanno in `resources/css/app.css` (`@theme`): li usi come classi Tailwind (`bg-cemento`, `text-disco-rosso`, `font-tabellone`).
+I font arrivano da npm (`@fontsource`), quindi sono dentro il progetto e funzionano anche senza CDN.
 
 </details>
 
 ---
 
 <details>
-<summary><b>📖 Dizionario CodeIgniter (tutte le parole usate)</b></summary>
-
-<br>
-
-<details>
-<summary>Routing e Controller</summary>
+<summary><b>📖 Dizionario Laravel (le parole usate)</b></summary>
 
 <br>
 
 | Dicitura | Cosa significa |
 |---|---|
-| `$routes->get('url', 'Classe::metodo')` | quando apri quell'URL, esegui quel metodo |
-| `(:num)` | nell'URL accetto solo un numero; arriva al metodo come parametro (`$1`) |
-| `$routes->group('admin', ['filter' => ...])` | tutte le rotte dentro hanno lo stesso prefisso e gli stessi filtri |
-| `$this->request->getPost('nome')` | legge un campo del form (POST) |
-| `$this->request->getGet('periodo')` | legge un parametro dell'URL (`?periodo=12`) |
-| `$this->validate($regole)` | controlla i dati del form con le regole |
-| `$this->validateData($dati, $regole)` | come sopra, ma su un array che prepari tu |
-| `$this->validator->getErrors()` | gli errori trovati |
-| `redirect()->to('url')` | manda il browser a un'altra pagina |
-| `redirect()->back()` | torna alla pagina di prima |
-| `->withInput()` | ricorda cosa avevi scritto nel form |
-| `->with('successo', '...')` | messaggio "flash": dura una sola pagina |
-| `session('successo')` | legge quel messaggio |
+| `Route::get('pesi', [ProgressController::class, 'index'])->name('progress.index')` | URL → metodo del controller, con un nome per `route('progress.index')` |
+| `{workout}` nella rotta + `Workout $workout` nel metodo | *route model binding*: Laravel trova da solo il record per id |
+| `->middleware('auth')` | serve il login |
+| FormRequest (`WorkoutRequest`) | la validazione di un form in una classe; il controller riceve dati già validi |
+| `prepareForValidation()` | pulisce i dati prima di validarli (es. `56,8` → `56.8`) |
+| `$request->validated()` | solo i campi validati |
+| `#[Fillable([...])]` | i campi che puoi salvare in blocco (protezione) |
+| `casts()` | trasforma i valori (date → Carbon, decimali → float) |
+| `hasMany` / `belongsTo` | relazioni tra tabelle |
+| `withTrashed()` / `SoftDeletes` | soft delete: il record resta, con `deleted_at` |
+| `DB::transaction(fn () => ...)` | tutto o niente |
+| `factory()->for($user)->create()` | crea record finti collegati (seeder e test) |
+| `$this->app->bind(Interfaccia::class, ...)` | dependency injection: quale classe concreta usare |
+| `<x-panel>` | componente Blade (`resources/views/components/panel.blade.php`) |
+| `@vite([...])` | carica CSS e JS compilati da Vite |
+| `Http::fake()` / `Storage::fake()` | nei test: finta IA, finto disco |
+| `throttle:5,1` | massimo 5 richieste in 1 minuto |
+
+</details>
+
+---
+
+<details>
+<summary><b>🛠️ Ricette</b></summary>
+
+<br>
+
+<details>
+<summary>Aggiungere uno stato della serie</summary>
+
+<br>Una riga in `database/seeders/SetStateSeeder.php`, poi `php artisan db:seed --class=SetStateSeeder`.
 
 </details>
 
 <details>
-<summary>Model e database</summary>
+<summary>Cambiare cosa riceve l'IA</summary>
 
-<br>
-
-| Dicitura | Cosa significa |
-|---|---|
-| `model(WorkoutModel::class)` | ti dà il model (sempre la stessa istanza, non ne crea mille) |
-| `$table` | la tabella del model |
-| `$allowedFields` | le colonne che puoi salvare (protezione: le altre vengono ignorate) |
-| `$returnType = 'array'` | i risultati arrivano come array |
-| `$useTimestamps = true` | riempie da solo `created_at` e `updated_at` |
-| `$useSoftDeletes = true` | `delete()` non cancella: riempie `deleted_at` |
-| `find($id)` / `first()` / `findAll()` | uno per id / il primo / tutti |
-| `where()`, `whereIn()`, `orderBy()`, `join()` | Query Builder: costruisci la query con PHP |
-| `selectMax()`, `selectAvg()`, `selectCount()` | MAX, AVG, COUNT in SQL |
-| `insert()`, `update()`, `delete()` | crea, modifica, cancella |
-| `paginate(12)` + `$model->pager` | 12 risultati per pagina + i link pagina |
-| `transStart()` / `transComplete()` | transazione: tutto o niente |
-| Migration | un file che **crea** o modifica una tabella (`php spark migrate`) |
-| `$this->forge->addField()` | (nelle migration) definisce le colonne |
-| `addForeignKey(..., 'CASCADE', 'CASCADE')` | collegamento tra tabelle + cosa fare quando si cancella |
-| Seeder | un file che **riempie** le tabelle (`php spark db:seed NomeSeeder`) |
+<br>`app/Services/Coach/CoachContext.php`: ogni sezione è un metodo (`plans`, `sessions`, `weightTrend`, `bodyData`, `photos`). Per mandare di più, aggiungi un metodo e mettilo in `build()`. Settimane di dati: `config/gymlog.php` → `coach.weeks_of_data`.
 
 </details>
 
 <details>
-<summary>Viste</summary>
+<summary>Cambiare il comportamento del coach</summary>
 
-<br>
-
-| Dicitura | Cosa significa |
-|---|---|
-| `view('home/index', $dati)` | mostra `app/Views/home/index.php` con quei dati |
-| `$this->extend('layouts/app')` | questa pagina usa quella cornice |
-| `$this->section('x')` … `$this->endSection()` | riempie il "buco" x della cornice |
-| `$this->renderSection('x')` | (nella cornice) qui va il contenuto della sezione x |
-| `$this->include('partials/sidebar')` | inserisce un'altra vista |
-| `esc($testo)` | **sempre** prima di stampare testo dell'utente: blocca l'XSS |
-| `old('nome', $default)` | il valore scritto prima dell'errore (o il default) |
-| `csrf_field()` | il campo nascosto col token CSRF |
-| `site_url('storico')` | URL completo di una pagina |
-| `base_url('assets/css/x.css')` | URL completo di un file in `public/` |
-| `url_is('storico*')` | l'URL attuale è questo? (per evidenziare il menu) |
+<br>Modifica `resources/prompts/coach.md`. Modello: `DEEPSEEK_MODEL` nel `.env` (es. `deepseek-reasoner`).
 
 </details>
 
 <details>
-<summary>Config, Helper, Library, Filtri</summary>
+<summary>Aggiungere una pagina</summary>
 
 <br>
 
-| Dicitura | Cosa significa |
-|---|---|
-| `config('Gym')` | legge `app/Config/Gym.php` |
-| Helper | file di funzioni sciolte; si caricano con `helper('nome')` o in `Autoload.php` |
-| Library | una classe "tua" in `app/Libraries` per la logica che non è né controller né model |
-| Filtro | codice che gira **prima** o **dopo** il controller (login, CSRF, honeypot…) |
-| `before` / `after` | prima del controller / dopo, sulla risposta |
-| `.env` | configurazione del TUO computer (database, password): mai su GitHub |
-| `php spark` | il terminale di CodeIgniter (come `php artisan`) |
-
-</details>
-
-<details>
-<summary>Shield</summary>
-
-<br>
-
-| Dicitura | Cosa significa |
-|---|---|
-| `auth()->loggedIn()` | c'è qualcuno loggato? |
-| `auth()->user()` | l'utente loggato (oggetto `User`) |
-| `auth()->id()` | il suo id |
-| `auth()->getProvider()` | il model degli utenti di Shield |
-| `auth()->check([...])` | email+password giuste? (senza fare login) |
-| `$user->inGroup('admin')` | ha quel ruolo? |
-| `$user->addGroup()` / `syncGroups()` | aggiunge / sostituisce i ruoli |
-| `$user->ban()` / `unBan()` / `isBanned()` | blocca / sblocca / è bloccato? |
-| `$user->activate()` | attiva l'account |
-| filtro `session` | serve il login |
-| filtro `group:admin` | serve il ruolo admin |
+1. Rotta in `routes/web.php` dentro `middleware('auth')`
+2. Controller sottile: inietta il servizio che ti serve nel metodo
+3. Vista che inizia con `<x-layout title="...">`
+4. Voce di menu: `$nav` in `resources/views/components/layout.blade.php`
 
 </details>
 
@@ -1087,156 +491,16 @@ E comunque, anche se scadesse, la **bozza** ti salva i dati.
 ---
 
 <details>
-<summary><b>🛠️ Ricette: come faccio a…</b></summary>
+<summary><b>✅ Test</b></summary>
 
 <br>
 
-<details>
-<summary>…aggiungere uno stato nuovo (es. "Dropset")?</summary>
+`php artisan test` — 18 test:
 
-<br>
-
-1. Apri `app/Database/Seeds/StatiSeeder.php`
-2. Aggiungi una riga nell'array `$stati`
-3. `php spark db:seed StatiSeeder` (quelli già presenti non vengono duplicati)
-
-Colori disponibili: `ambra`, `blu`, `viola`, `rosso`, `ciano`, `rosa`.
-
-</details>
-
-<details>
-<summary>…aggiungere un gruppo muscolare o un colore?</summary>
-
-<br>
-
-`app/Config/Gym.php` → `$gruppiMuscolari` o `$coloriWorkout`.
-Per un colore nuovo aggiungi anche la classe in `public/assets/css/componenti.css` (es. `.disco--giallo`).
-
-</details>
-
-<details>
-<summary>…aggiungere una pagina nuova?</summary>
-
-<br>
-
-1. **Rotta** in `app/Config/Routes.php` (dentro il gruppo con `session`)
-2. **Controller** in `app/Controllers/` che estende `BaseController`
-3. **Vista** in `app/Views/…` che inizia con `<?= $this->extend('layouts/app') ?>`
-4. (se serve) voce nel menu: `app/Views/partials/sidebar.php` e `nav_mobile.php`
-
-</details>
-
-<details>
-<summary>…cambiare il colore principale?</summary>
-
-<br>
-
-`public/assets/css/base.css` → `--accento` (e `--accento-tenue`, `--accento-hover`).
-
-</details>
-
-<details>
-<summary>…lanciare i test?</summary>
-
-<br>
-
-```bash
-vendor/bin/phpunit
-```
-
-</details>
-
-<details>
-<summary>…riempire di nuovo i dati demo da zero?</summary>
-
-<br>
-
-```bash
-php spark migrate:refresh --all   # ⚠️ CANCELLA TUTTO
-php spark db:seed DatabaseSeeder
-php spark db:seed DemoSeeder
-```
-
-</details>
-
-<details>
-<summary>…mettere l'app online?</summary>
-
-<br>
-
-- Nel `.env`: `CI_ENVIRONMENT = production` e `app.baseURL` con il tuo dominio.
-- La cartella pubblica del server deve essere **`public/`** (non la cartella del progetto).
-- Usa **HTTPS** (`app.forceGlobalSecureRequests = true` nel `.env`).
-
-</details>
-
-</details>
-
----
-
-<details>
-<summary><b>🧯 Problemi comuni</b></summary>
-
-<br>
-
-<details>
-<summary>"Unable to connect to the database"</summary>
-
-<br>
-
-Controlla nel `.env`: `hostname`, `database`, `username`, `password`. Il database `gymlog` deve esistere già.
-
-</details>
-
-<details>
-<summary>Dopo il login torno sempre al login</summary>
-
-<br>
-
-Probabilmente `app.baseURL` nel `.env` non corrisponde all'indirizzo che usi (es. `localhost` vs `127.0.0.1`). Devono essere uguali.
-
-</details>
-
-<details>
-<summary>"Troppe richieste" sul login</summary>
-
-<br>
-
-È il limite anti-bot (10 al minuto). Aspetta un minuto.
-
-</details>
-
-<details>
-<summary>"The action you requested is not allowed"</summary>
-
-<br>
-
-Token CSRF scaduto (pagina aperta da più di 4 ore). Ricarica la pagina; se eri nel Workout la bozza ti ridà i dati.
-
-</details>
-
-<details>
-<summary>In basso a destra c'è un'icona con una fiamma</summary>
-
-<br>
-
-È la **Debug Toolbar** di CodeIgniter: compare solo con `CI_ENVIRONMENT = development`. In produzione sparisce.
-
-</details>
-
-</details>
-
----
-
-<details>
-<summary><b>💡 Idee per dopo (non fatte apposta, per restare semplici)</b></summary>
-
-<br>
-
-- Pagina admin per gestire gli **stati** e il **catalogo esercizi**
-- Grafico dei progressi di **un singolo esercizio** nel tempo
-- Esportare lo storico in CSV
-- PWA completa (funzionare offline e salvare quando torna la rete)
-- "Recupera password" via email (Shield lo supporta, serve configurare l'invio email)
+- **Login**: entra/esce, utente bloccato, honeypot, admin vs user
+- **Allenamento**: peso diverso per ogni serie, niente serie = errore, numeri fantasma, scheda di un altro = 404, scheda con peso + doppioni, tracker pesi
+- **Corpo**: una misurazione al giorno, foto salvate sul disco (finto) e private
+- **Coach**: i dati e il system prompt arrivano a DeepSeek (finto) e la risposta viene salvata; senza chiave errore chiaro
+- **Formule**: %, massimale, settimane vuote
 
 </details>
