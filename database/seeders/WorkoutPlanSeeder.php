@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\User;
-use App\Models\Workout;
+use App\Services\Training\WorkoutPlanner;
 use Illuminate\Database\Seeder;
 
 /**
@@ -33,7 +33,8 @@ class WorkoutPlanSeeder extends Seeder
         ]],
     ];
 
-    public function run(): void
+    /** Uso lo stesso servizio del form "Nuova scheda" (niente factory: in produzione Faker non c'è). */
+    public function run(WorkoutPlanner $planner): void
     {
         $matteo = User::where('email', 'ioelematteo@gmail.com')->firstOrFail();
 
@@ -42,10 +43,12 @@ class WorkoutPlanSeeder extends Seeder
                 continue; // già creata: non la duplico
             }
 
-            Workout::factory()
-                ->for($matteo)
-                ->withExercises($plan['exercises'])
-                ->create(['name' => $name, 'color' => $plan['color']]);
+            $rows = array_map(fn ($e) => [
+                'name' => $e[0], 'sets' => $e[1], 'reps_target' => $e[2],
+                'weight_target' => (float) $e[3], 'rest_seconds' => 90, 'notes' => null,
+            ], $plan['exercises']);
+
+            $planner->save($matteo, ['name' => $name, 'color' => $plan['color'], 'notes' => null], $rows);
         }
     }
 }

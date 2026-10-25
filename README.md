@@ -39,7 +39,7 @@ Cambia le password dopo il primo accesso (menu in alto a destra → Profilo).
 2. Aggiungi un **database** (MySQL o Postgres): le variabili `DB_*` le imposta Laravel Cloud.
 3. Aggiungi un **bucket** (object storage) per le foto e metti `GYMLOG_PHOTOS_DISK` = nome del disco del bucket.
 4. Variabili d'ambiente: `APP_LOCALE=it`, `APP_TIMEZONE=Europe/Rome`, `DEEPSEEK_API_KEY=...`.
-5. Build: `composer install --no-dev` e `npm ci && npm run build`. Deploy: `php artisan migrate --force`.
+5. Build: `composer install --no-dev --optimize-autoloader` e `npm ci && npm run build`. **Deploy** (non build): `php artisan migrate --force`. Mai `migrate:fresh` in produzione: cancella tutti i dati.
 6. Solo la prima volta, dalla console di Laravel Cloud: `php artisan db:seed --force`.
 
 ## Test
